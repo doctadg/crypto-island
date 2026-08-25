@@ -163,18 +163,21 @@ function pine(h = 4.4) {
 
 function palm() {
   const g = new THREE.Group();
-  const trunk = mesh(new THREE.CylinderGeometry(0.09, 0.15, 3.6, 5), 0x8a6a3a);
-  trunk.position.y = 1.8;
-  trunk.rotation.z = 0.14;
+  const trunk = mesh(new THREE.CylinderGeometry(0.1, 0.16, 3.5, 6), 0x8a6a3a);
+  trunk.position.y = 1.75;
+  trunk.rotation.z = 0.1;
   g.add(trunk);
-  for (let i = 0; i < 8; i++) {
-    const leaf = mesh(new THREE.BoxGeometry(2.1, 0.05, 0.42), i % 2 ? C.green : C.greenDeep);
-    const a = (i / 8) * Math.PI * 2;
-    leaf.position.set(Math.cos(a) * 0.85, 3.45, Math.sin(a) * 0.85);
-    leaf.rotation.y = a;
-    leaf.rotation.z = -0.85;
-    leaf.rotation.x = 0.12;
-    g.add(leaf);
+  const crown = mesh(new THREE.SphereGeometry(0.22, 6, 5), C.greenDeep);
+  crown.position.set(0.18, 3.5, 0);
+  g.add(crown);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const frond = mesh(new THREE.SphereGeometry(0.55, 6, 4), i % 2 ? C.green : C.greenDeep);
+    frond.scale.set(1.6, 0.22, 0.55);
+    frond.position.set(Math.cos(a) * 0.85 + 0.15, 3.42, Math.sin(a) * 0.85);
+    frond.rotation.y = a;
+    frond.rotation.z = -0.35;
+    g.add(frond);
   }
   return g;
 }
