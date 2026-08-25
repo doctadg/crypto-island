@@ -137,7 +137,19 @@ button { font-family: inherit; cursor: pointer; }
   display: block;
 }
 .brand { font: 700 13px/1 var(--mono); letter-spacing: 0.16em; }
-.zone { margin-top: 4px; font: 600 12px/1 var(--sans); color: #b7c7b4; }
+.zone {
+  margin-top: 5px;
+  font: 800 15px/1 var(--sans);
+  letter-spacing: 0.08em;
+  color: #f4f7f2;
+  text-shadow: 0 1px 8px #000;
+}
+.zone-hint {
+  margin-top: 3px;
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.1em;
+  color: #7de39a;
+}
 .compass {
   position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
   width: 54px; height: 54px; border-radius: 50%;

@@ -43,29 +43,36 @@ function n2(x, z) {
 
 export function heightAt(x, z) {
   const r = Math.hypot(x, z);
-  if (r > ISLAND_R + 8) return -0.35;
+  if (r > ISLAND_R + 10) return -0.55;
 
-  const beach = x > 10 && z > -4 && z < 22 && r < ISLAND_R + 4;
-  if (beach && r > 26) return 0.16 + Math.max(0, (32 - r) * 0.035);
+  const beach = x > 10 && z > -4 && z < 22 && r < ISLAND_R + 5;
+  if (beach && r > 24) {
+    const t = Math.max(0, Math.min(1, (32 - r) / 8));
+    return -0.08 + t * 0.42;
+  }
 
-  if (r > ISLAND_R + 1.2) return -0.2;
+  if (r > ISLAND_R + 2.4) return -0.42;
+  if (r > ISLAND_R - 3.2) {
+    const t = (ISLAND_R + 2.4 - r) / 5.6;
+    return -0.08 + t * t * (3 - 2 * t) * 0.46;
+  }
 
-  const t = Math.max(0, 1 - r / (ISLAND_R + 0.4));
+  const t = Math.max(0, 1 - r / (ISLAND_R - 2.4));
   const eased = t * t * (3 - 2 * t);
-  let h = 0.26 + eased * 3.05;
+  let h = 0.38 + eased * 2.85;
 
   const cr = Math.hypot(x, z + 1.2);
-  if (cr < 9) h += (1 - cr / 9) * 0.28;
+  if (cr < 9) h += (1 - cr / 9) * 0.24;
 
   if (x < -4 && z > 2 && r < 36) {
     const k = Math.max(0, Math.min(1, (-x - 4) / 20));
-    h += k * 0.42;
+    h += k * 0.36;
   }
-  if (x > 2 && z < -6 && r < 30) h += 0.16;
-  if (x > 12 && x < 22 && z > 16 && z < 24) h = Math.min(h, 0.62);
+  if (x > 2 && z < -6 && r < 30) h += 0.14;
+  if (x > 12 && x < 22 && z > 16 && z < 24) h = Math.min(h, 0.55);
 
-  h += n2(x, z) * 0.07;
-  return Math.max(0.12, h);
+  h += n2(x, z) * 0.05;
+  return Math.max(0.2, h);
 }
 
 function islandMesh() {
@@ -89,14 +96,14 @@ function islandMesh() {
     const z = pos.getZ(i);
     const r = Math.hypot(x, z);
     let y = heightAt(x, z);
-    if (r > ISLAND_R + 3) y = -0.4;
+    if (r > ISLAND_R + 4) y = -0.5;
     pos.setY(i, y);
 
-    const slope = r > 30 || y < 0.7;
-    const beach = x > 12 && z > -2 && z < 22 && y < 1.1;
-    if (r > ISLAND_R + 2) tmp.set(C.oceanDeep);
+    const beach = x > 10 && z > -4 && z < 24 && y < 0.55;
+    if (r > ISLAND_R + 2.2) tmp.set(C.oceanDeep);
+    else if (y < 0.22) tmp.copy(cSand);
     else if (beach) tmp.copy(cSand);
-    else if (slope && y < 2.2) tmp.lerpColors(cRock, cRockD, (Math.sin(x * 0.4 + z) + 1) * 0.5);
+    else if (y < 0.55) tmp.lerpColors(cSand, cGrass, (y - 0.22) / 0.33);
     else if (y > 3.1) tmp.copy(cDirt);
     else tmp.lerpColors(cGrass, cGrassLit, (Math.sin(x * 0.3) + 1) * 0.35);
     colors.push(tmp.r, tmp.g, tmp.b);
@@ -122,7 +129,7 @@ function islandMesh() {
     const d = 1.2 + ((i * 2) % 3) * 0.3;
     const h = 0.55 + (i % 4) * 0.18;
     const slab = mesh(new THREE.BoxGeometry(w, h, d), i % 2 ? C.rock : C.rockDark);
-    slab.position.set(x, 0.08, z);
+    slab.position.set(x, Math.max(0.02, heightAt(x, z) - 0.08), z);
     slab.rotation.y = a + 0.2;
     g.add(slab);
   }
@@ -262,6 +269,84 @@ function campfire() {
   flame.material.emissive = new THREE.Color(C.torch);
   flame.material.emissiveIntensity = 0.7;
   g.add(flame);
+  return g;
+}
+
+function farIsland(kind) {
+  const g = new THREE.Group();
+  const land = mesh(new THREE.CylinderGeometry(kind === "tax" ? 6.4 : 5.2, 7.6, 1.6, 8), C.sand, false);
+  land.position.y = 0.1;
+  g.add(land);
+  if (kind === "tax") {
+    const hutA = hut(C.white);
+    hutA.position.set(-1.4, 0.8, 0.4);
+    hutA.scale.setScalar(1.4);
+    const hutB = hut(C.green);
+    hutB.position.set(1.8, 0.8, -0.6);
+    hutB.scale.setScalar(1.1);
+    const palmA = palm();
+    palmA.position.set(3.2, 0.8, 1.4);
+    g.add(hutA, hutB, palmA);
+  } else {
+    const tower = mesh(new THREE.CylinderGeometry(0.45, 0.7, 5.2, 6), C.white, false);
+    tower.position.y = 3.2;
+    const cap = mesh(new THREE.ConeGeometry(0.9, 1.1, 5), 0xc44a3a, false);
+    cap.position.y = 6.1;
+    g.add(tower, cap);
+  }
+  return g;
+}
+
+function billboard(text, w = 2.4) {
+  const g = new THREE.Group();
+  const pole = mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.2, 5), C.woodDark);
+  pole.position.y = 1.1;
+  const board = mesh(new THREE.BoxGeometry(w, 0.7, 0.08), 0x16382a);
+  board.position.set(0, 2.05, 0.04);
+  const canvas = document.createElement("canvas");
+  canvas.width = 384;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#16382a";
+  ctx.fillRect(0, 0, 384, 128);
+  ctx.fillStyle = "#f4efe4";
+  ctx.font = "bold 34px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, 192, 64);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(w - 0.1, 0.58),
+    new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })
+  );
+  face.position.set(0, 2.05, 0.1);
+  g.add(pole, board, face);
+  return g;
+}
+
+function treasureChest() {
+  const g = new THREE.Group();
+  const box = mesh(new THREE.BoxGeometry(0.7, 0.38, 0.46), 0x6a4528);
+  box.position.y = 0.2;
+  const lid = mesh(new THREE.BoxGeometry(0.72, 0.12, 0.48), 0x8a5a2a);
+  lid.position.set(0, 0.42, -0.04);
+  lid.rotation.x = -0.35;
+  const lock = mesh(new THREE.BoxGeometry(0.1, 0.1, 0.06), 0xe8c15a);
+  lock.position.set(0, 0.28, 0.24);
+  g.add(box, lid, lock);
+  return g;
+}
+
+function crashedCrate() {
+  const g = new THREE.Group();
+  const a = crate();
+  a.rotation.z = 0.4;
+  a.rotation.x = 0.2;
+  const b = crate();
+  b.position.set(0.55, 0.05, 0.2);
+  b.rotation.y = 0.8;
+  g.add(a, b);
   return g;
 }
 
@@ -545,21 +630,25 @@ function pathBoards(root) {
 }
 
 export const ZONES = [
-  { id: "MAIN_DOCK", label: "MAIN DOCK", x: 1.5, z: 28, r: 8, fish: true },
-  { id: "NORTH_DOCK", label: "NORTH DOCK", x: -24, z: 8, r: 8, fish: true },
-  { id: "EAST_BEACH", label: "EAST BEACH", x: 28, z: 10, r: 10, fish: true },
-  { id: "SOUTH_CLIFFS", label: "SOUTH CLIFFS", x: -18, z: 18, r: 8, fish: true },
-  { id: "CAVES", label: "CAVES", x: 17, z: 20, r: 7, fish: true },
-  { id: "OFFSHORE", label: "OFFSHORE", x: -30, z: 2, r: 7, fish: true },
-  { id: "FOREST", label: "FOREST AREA", x: 10, z: -14, r: 10, fish: false },
-  { id: "LIGHTHOUSE", label: "CENTRAL TOWER", x: 0, z: -1, r: 8, fish: false },
+  { id: "MAIN_DOCK", label: "MAIN DOCK", hint: "Starter water", x: 1.6, z: 32, r: 11, fish: true },
+  { id: "NORTH_DOCK", label: "NORTH DOCK", hint: "Token trout water", x: -24, z: 8, r: 8, fish: true },
+  { id: "EAST_BEACH", label: "EAST BEACH", hint: "Sandy shallows", x: 28, z: 10, r: 10, fish: true },
+  { id: "SOUTH_CLIFFS", label: "SOUTH CLIFFS", hint: "Need Cliff Rod", x: -18, z: 18, r: 8, fish: true },
+  { id: "CAVES", label: "THE CAVES", hint: "Dark pool", x: 17, z: 20, r: 7, fish: true },
+  { id: "OFFSHORE", label: "OFFSHORE", hint: "Need Offshore Rod", x: -30, z: 2, r: 7, fish: true },
+  { id: "FOREST", label: "PINE WOODS", hint: "No fishing", x: 10, z: -14, r: 10, fish: false },
+  { id: "LIGHTHOUSE", label: "LIGHTHOUSE", hint: "Shop + burns", x: 0, z: -1, r: 8, fish: false },
+  { id: "VILLAGE", label: "HUT ROW", hint: "Redeem counter", x: 6, z: 22, r: 6, fish: false },
 ];
 
 export function zoneAt(x, z) {
-  let best = { id: "ISLAND", label: "ISLAND PATH", fish: false, d: 99 };
+  let best = { id: "ISLAND", label: "ISLAND PATH", hint: "Walk the hill", fish: false, d: 99 };
   for (const zn of ZONES) {
     const d = Math.hypot(x - zn.x, z - zn.z);
     if (d < zn.r && d < best.d) best = { ...zn, d };
+  }
+  if (heightAt(x, z) < 0.12 && best.id === "ISLAND") {
+    return { id: "OCEAN", label: "OPEN OCEAN", hint: "Swim / boat", fish: true, d: 0 };
   }
   return best;
 }
@@ -706,14 +795,35 @@ export function createWorld(scene) {
   place(root, signPost("NO RUGS"), 3.4, 28.6, 0.1, 0, 0.35);
   place(root, signPost("CAST HERE"), 4.8, 33.2, -0.2, 0, 0.35);
   place(root, signPost("BEWARE CHEF"), -4.2, 8.8, 0.4, 0, 0.35);
+  place(root, billboard("DEV WALLET THIS WAY"), 9.6, 24.8, -0.5, 0, 0.4);
+  place(root, billboard("LIQUIDITY POOL"), -10.4, 20.6, 0.6, 0, 0.4);
   place(root, giantBoot(), 29.6, 6.2, -0.6, 0, 0.7);
   place(root, hiddenToilet(), 19.4, 18.8, 0.8, 0.05, 0.45);
   place(root, tinyShrine(), -8.8, -8.4, 0.2, 0, 0.5);
   place(root, washedUpPc(), 26.8, 17.4, 0.5, 0, 0.4);
+  place(root, treasureChest(), 21.2, 22.6, 0.3, 0, 0.45);
+  place(root, crashedCrate(), -26.4, 12.2, 0.4, 0, 0.7);
   const duck = rubberDuck();
   duck.position.set(8.4, 0.18, 34.6);
   duck.userData.float = true;
   root.add(duck);
+
+  const taxHaven = farIsland("tax");
+  taxHaven.position.set(92, -0.2, -48);
+  taxHaven.rotation.y = 0.4;
+  root.add(taxHaven);
+  const paperHands = farIsland("paper");
+  paperHands.position.set(-86, -0.2, 54);
+  paperHands.rotation.y = -0.7;
+  root.add(paperHands);
+  const taxSign = billboard("TAX HAVEN", 3.2);
+  taxSign.position.set(86, 1.2, -42);
+  taxSign.lookAt(0, 2, 0);
+  root.add(taxSign);
+  const paperSign = billboard("PAPER HANDS ATOLL", 3.6);
+  paperSign.position.set(-80, 1.2, 48);
+  paperSign.lookAt(0, 2, 0);
+  root.add(paperSign);
 
   const birds = [];
   for (let i = 0; i < 5; i++) {
@@ -765,4 +875,6 @@ export const INTERACTS = [
   { id: "shrine", label: "E  Pill shrine", x: -8.8, z: -8.4, r: 2 },
   { id: "pc", label: "E  Washed-up PC", x: 26.8, z: 17.4, r: 2 },
   { id: "duck", label: "E  Rubber duck", x: 8.4, z: 34.6, r: 2.2 },
+  { id: "chest", label: "E  Chest", x: 21.2, z: 22.6, r: 2 },
+  { id: "crash", label: "E  Airdrop", x: -26.4, z: 12.2, r: 2.2 },
 ];

@@ -78,10 +78,13 @@ export function tickSky(sky, t) {
 }
 
 export function waterHeight(x, z, t) {
-  const w1 = Math.sin(x * 0.18 + t * 1.55) * 0.22;
-  const w2 = Math.cos(z * 0.14 + t * 1.1) * 0.16;
-  const w3 = Math.sin((x + z) * 0.31 + t * 2.1) * 0.07;
-  return 0.08 + w1 + w2 + w3;
+  const r = Math.hypot(x, z);
+  const mix = Math.max(0, Math.min(1, (r - 34.5) / 7.5));
+  if (mix <= 0) return -0.12;
+  const w1 = Math.sin(x * 0.16 + t * 1.35) * 0.16;
+  const w2 = Math.cos(z * 0.12 + t * 0.95) * 0.11;
+  const w3 = Math.sin((x + z) * 0.28 + t * 1.8) * 0.05;
+  return 0.02 + (w1 + w2 + w3) * mix;
 }
 
 export function createWater() {
@@ -100,13 +103,17 @@ export function createWater() {
       uniform float uTime;
       varying vec3 vW;
       varying float vH;
+      varying float vMix;
       void main() {
         vec3 p = position;
-        float w1 = sin(p.x * 0.18 + uTime * 1.55) * 0.22;
-        float w2 = cos(p.z * 0.14 + uTime * 1.1) * 0.16;
-        float w3 = sin((p.x + p.z) * 0.31 + uTime * 2.1) * 0.07;
-        p.y += w1 + w2 + w3;
+        float r = length(p.xz);
+        float mixW = clamp((r - 34.5) / 7.5, 0.0, 1.0);
+        float w1 = sin(p.x * 0.16 + uTime * 1.35) * 0.16;
+        float w2 = cos(p.z * 0.12 + uTime * 0.95) * 0.11;
+        float w3 = sin((p.x + p.z) * 0.28 + uTime * 1.8) * 0.05;
+        p.y += (w1 + w2 + w3) * mixW;
         vH = p.y;
+        vMix = mixW;
         vW = (modelMatrix * vec4(p, 1.0)).xyz;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
       }
@@ -119,25 +126,27 @@ export function createWater() {
       uniform float uTime;
       varying vec3 vW;
       varying float vH;
+      varying float vMix;
       void main() {
+        if (vMix < 0.04) discard;
         float r = length(vW.xz);
-        float shore = smoothstep(46.0, 32.0, r);
-        vec3 col = mix(uDeep, uMid, smoothstep(0.0, 0.18, vH));
+        float shore = 1.0 - vMix;
+        vec3 col = mix(uDeep, uMid, smoothstep(0.0, 0.14, vH));
         col = mix(col, uShal, shore);
-        float crest = smoothstep(0.18, 0.38, vH);
-        col = mix(col, uFoam, crest * 0.55);
-        float foam = sin(r * 0.72 - uTime * 2.2) * 0.5 + 0.5;
-        foam *= smoothstep(44.0, 36.0, r) * smoothstep(30.0, 37.0, r);
-        col = mix(col, uFoam, foam * 0.5);
-        float spark = pow(max(0.0, sin(vW.x * 0.85 + vW.z * 0.55 + uTime * 3.4)), 22.0);
-        col += spark * 0.16;
-        float alpha = mix(0.92, 0.78, shore);
+        float crest = smoothstep(0.12, 0.28, vH) * vMix;
+        col = mix(col, uFoam, crest * 0.5);
+        float foam = sin(r * 0.72 - uTime * 2.0) * 0.5 + 0.5;
+        foam *= smoothstep(0.15, 0.55, vMix) * smoothstep(1.0, 0.45, vMix);
+        col = mix(col, uFoam, foam * 0.55);
+        float spark = pow(max(0.0, sin(vW.x * 0.85 + vW.z * 0.55 + uTime * 3.2)), 22.0) * vMix;
+        col += spark * 0.14;
+        float alpha = mix(0.0, 0.9, smoothstep(0.04, 0.28, vMix));
         gl_FragColor = vec4(col, alpha);
       }
     `,
   });
   const water = new THREE.Mesh(geo, mat);
-  water.position.y = 0.02;
+  water.position.y = 0.0;
   water.receiveShadow = true;
   water.name = "water";
   return water;

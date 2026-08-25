@@ -15,6 +15,8 @@ const loadFill = document.getElementById("load-fill");
 const loadLine = document.getElementById("load-line");
 const promptEl = document.getElementById("prompt");
 const zoneEl = document.getElementById("zone-label");
+const zoneHintEl = document.getElementById("zone-hint");
+let lastZoneId = "";
 const tokenEl = document.getElementById("token-bal");
 const creditEl = document.getElementById("credit-bal");
 const catchEl = document.getElementById("catch-count");
@@ -367,6 +369,8 @@ function tryInteract() {
   if (lastInteract.id === "shrine") toast("The pill watches. Burn wisely.");
   if (lastInteract.id === "pc") toast("Still compiling. Since 2004.");
   if (lastInteract.id === "duck") toast("Quack. Not a fish. You cannot redeem this.");
+  if (lastInteract.id === "chest") toast("Locked. The chef has the key. Obviously.");
+  if (lastInteract.id === "crash") toast("Failed airdrop. Contents: sand.");
 }
 
 function setCastUI(phase, label, fill) {
@@ -551,6 +555,11 @@ function updatePrompt() {
   }
   const zone = zoneAt(p.x, p.z);
   zoneEl.textContent = zone.label;
+  if (zoneHintEl) zoneHintEl.textContent = zone.hint || (zone.fish ? "Fish here" : "Explore");
+  if (zone.id !== lastZoneId) {
+    lastZoneId = zone.id;
+    if (playing) toast(zone.label);
+  }
   if (panelOpen) {
     promptEl.textContent = "";
     return;
@@ -570,7 +579,7 @@ function stepPlayer(dt) {
   const tSec = performance.now() / 1000;
   const landY = heightAt(camera.position.x, camera.position.z);
   const waveY = waterHeight(camera.position.x, camera.position.z, tSec);
-  const onWater = landY < 0.28;
+  const onWater = landY < 0.08;
   const groundedY = onWater ? Math.max(landY, waveY) : landY;
   const sprint = !!(keys.ShiftLeft || keys.ShiftRight);
   const speed = (sprint ? 8.4 : 5.1) * (crouch ? 0.42 : 1) * (onWater ? 0.48 : 1) * (fishing ? 0.32 : 1);
