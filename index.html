@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>PUMPISLAND</title>
-    <meta name="description" content="PUMPISLAND — first-person fishing on a strange low-poly island." />
+    <meta name="description" content="PUMPISLAND — burn a rod, fish the island, catch real rewards." />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%232c8a4a' width='64' height='64' rx='14'/%3E%3Crect fill='%23f4f6f2' x='22' y='14' width='20' height='36' rx='10'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,56 +15,87 @@
     <div id="app">
       <canvas id="game"></canvas>
 
-      <div id="boot" class="overlay">
+      <div id="loader" class="loader">
+        <div class="loader-mark"></div>
+        <p class="kicker">LOADING THE ISLAND</p>
+        <h2>PUMPISLAND</h2>
+        <div class="load-track"><i id="load-fill"></i></div>
+        <p id="load-line" class="load-line">Waking the lighthouse…</p>
+      </div>
+
+      <div id="boot" class="overlay hidden">
         <div class="boot-card">
-          <p class="kicker">LOCAL PLAYABLE PROTOTYPE</p>
+          <p class="kicker">PLAYABLE PREVIEW</p>
           <h1>PUMPISLAND</h1>
-          <p class="lede">Burn tokens. Get a rod. Fish the island. Catch things that actually mean something.</p>
-          <ul class="boot-notes">
-            <li>WASD move · mouse look · Shift sprint · Space jump · C crouch</li>
-            <li>E interact · F / click cast when a rod is equipped</li>
-            <li>Wallet, burns and SOL payouts are <b>local preview</b> — no mainnet, no real funds</li>
-          </ul>
-          <button id="enter-btn" type="button">ENTER ISLAND</button>
-          <p class="fine">Phase 1 prototype. Style locked to the supplied island / character sheet.</p>
+          <p class="lede">A first-person fishing island. Burn TOKEN for a rod. Walk the docks. Catch things that actually mean something.</p>
+
+          <ol class="loop">
+            <li><b>01</b><span>Burn TOKEN at the lighthouse. That unlocks a rod. Preview only — nothing leaves this browser.</span></li>
+            <li><b>02</b><span>Explore docks, beach, cliffs, cave and the offshore skiff. Different water, different pools.</span></li>
+            <li><b>03</b><span>Cast. Wait the bite. Reel. Catches pay credits, TOKEN, preview SOL, merch claims or junk.</span></li>
+            <li><b>04</b><span>Redeem at the counter. Upgrade the rod. Reach rarer water. Repeat.</span></li>
+          </ol>
+
+          <div class="boot-grid">
+            <div>
+              <p class="mini">MOVE</p>
+              <p>WASD · mouse · Shift sprint · Space jump · C crouch</p>
+            </div>
+            <div>
+              <p class="mini">PLAY</p>
+              <p>E use · F / click cast · I pack · B shop · Tab journal</p>
+            </div>
+          </div>
+
+          <button id="enter-btn" type="button">ENTER PUMPISLAND</button>
+          <p class="fine">Wallet, burns and SOL / merch claims are local preview. No mainnet. No real funds.</p>
         </div>
       </div>
 
       <div id="hud" class="hud hidden">
         <div class="hud-top">
-          <div class="pill-mark" aria-hidden="true"></div>
-          <div>
-            <div class="brand">PUMPISLAND</div>
-            <div id="zone-label" class="zone">MAIN DOCK</div>
+          <div class="brand-lock">
+            <div class="pill-mark" aria-hidden="true"></div>
+            <div>
+              <div class="brand">PUMPISLAND</div>
+              <div id="zone-label" class="zone">MAIN DOCK</div>
+            </div>
           </div>
+          <div class="compass"><i id="compass-n"></i><span>N</span></div>
           <div class="hud-stats">
-            <span><em id="token-bal">240</em> TOKEN</span>
-            <span><em id="credit-bal">0</em> CREDITS</span>
-            <span><em id="catch-count">0</em> CATCHES</span>
+            <span><em id="token-bal">240</em>TOKEN</span>
+            <span><em id="credit-bal">0</em>CREDITS</span>
+            <span><em id="catch-count">0</em>CATCHES</span>
           </div>
         </div>
 
         <div id="crosshair"></div>
         <div id="prompt" class="prompt"></div>
+
         <div id="cast-meter" class="cast-meter hidden">
+          <div class="cast-phase" id="cast-phase">CASTING</div>
           <div class="cast-track"><i id="cast-fill"></i></div>
-          <div id="cast-label">WAITING…</div>
+          <div id="cast-label">WAITING FOR A BITE</div>
+        </div>
+
+        <div id="catch-card" class="catch-card hidden">
+          <p class="mini" id="catch-rarity">RARE</p>
+          <h3 id="catch-name">Golden Tuna</h3>
+          <p id="catch-kind">SOL (PREVIEW)</p>
         </div>
 
         <div class="hud-bottom">
           <div id="rod-slot" class="slot empty">NO ROD</div>
-          <div class="keys">
-            <span>I inventory</span>
-            <span>B burn / shop</span>
-            <span>Tab journal</span>
-            <span>Esc release mouse</span>
+          <div class="hotbar">
+            <button type="button" data-hot="shop">B SHOP</button>
+            <button type="button" data-hot="inv">I PACK</button>
+            <button type="button" data-hot="board">TAB LOG</button>
           </div>
-          <div id="demo-tag">DEMO ECONOMY · NO CHAIN</div>
+          <div id="demo-tag">PREVIEW ECONOMY</div>
         </div>
       </div>
 
       <div id="toast" class="toast hidden"></div>
-
       <aside id="panel" class="panel hidden" aria-hidden="true"></aside>
 
       <div id="touch" class="touch hidden">

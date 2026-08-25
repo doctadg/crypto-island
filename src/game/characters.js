@@ -298,17 +298,94 @@ export function animateCharacter(root, t, moving = false, fishing = false) {
 
 export function createFirstPersonArms(rodEquipped) {
   const g = new THREE.Group();
-  if (rodEquipped) {
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.1), mat(C.skin));
-    grip.position.set(0.2, -0.16, -0.36);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.014, 1.55, 5), mat(0x3a2a18));
-    pole.position.set(0.26, 0.0, -0.82);
-    pole.rotation.x = 1.18;
-    pole.rotation.z = -0.2;
-    const reel = new THREE.Mesh(new THREE.SphereGeometry(0.028, 5, 5), mat(C.clothBlack));
-    reel.position.set(0.22, -0.12, -0.44);
-    g.add(grip, pole, reel);
-  }
   g.name = "fp-arms";
+  const skin = mat(C.skin);
+  const cloth = mat(C.white);
+
+  const lArm = new THREE.Group();
+  const lSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.28), cloth);
+  lSleeve.position.set(-0.18, -0.2, -0.32);
+  lSleeve.rotation.x = 0.35;
+  const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, 0.07), skin);
+  lHand.position.set(-0.18, -0.16, -0.48);
+  lArm.add(lSleeve, lHand);
+
+  const rArm = new THREE.Group();
+  const rSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.3), cloth);
+  rSleeve.position.set(0.2, -0.22, -0.3);
+  rSleeve.rotation.x = 0.42;
+  const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, 0.07), skin);
+  rHand.position.set(0.22, -0.17, -0.46);
+  rArm.add(rSleeve, rHand);
+
+  g.add(lArm, rArm);
+  g.userData.lArm = lArm;
+  g.userData.rArm = rArm;
+  g.userData.pole = null;
+  g.userData.line = null;
+
+  if (rodEquipped) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.013, 1.65, 6), mat(0x3a2a18));
+    pole.position.set(0.26, 0.04, -0.86);
+    pole.rotation.x = 1.12;
+    pole.rotation.z = -0.16;
+    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.018, 8), mat(C.clothBlack));
+    reel.rotation.z = Math.PI / 2;
+    reel.position.set(0.22, -0.1, -0.44);
+    const tip = new THREE.Object3D();
+    tip.position.set(0.42, 0.62, -1.55);
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0.42, 0.62, -1.55),
+      new THREE.Vector3(0.55, -0.35, -3.4),
+    ]);
+    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xdfe8e2, transparent: true, opacity: 0.55 }));
+    line.visible = false;
+    g.add(pole, reel, tip, line);
+    g.userData.pole = pole;
+    g.userData.reel = reel;
+    g.userData.tip = tip;
+    g.userData.line = line;
+  }
   return g;
+}
+
+export function poseFishingArms(arms, phase, t) {
+  if (!arms) return;
+  const r = arms.userData.rArm;
+  const l = arms.userData.lArm;
+  const pole = arms.userData.pole;
+  const line = arms.userData.line;
+  if (!r) return;
+  if (phase === "cast") {
+    const k = Math.min(1, t / 0.38);
+    r.rotation.x = -1.15 * k;
+    l.rotation.x = -0.35 * k;
+    if (pole) pole.rotation.x = 1.12 - 0.85 * k;
+    if (line) line.visible = k > 0.7;
+  } else if (phase === "wait") {
+    r.rotation.x = -0.28 + Math.sin(t * 2.2) * 0.04;
+    l.rotation.x = -0.12;
+    if (pole) pole.rotation.x = 0.42 + Math.sin(t * 2.2) * 0.03;
+    if (line) {
+      line.visible = true;
+      const pos = line.geometry.attributes.position;
+      pos.setY(1, -0.35 + Math.sin(t * 3.4) * 0.08);
+      pos.needsUpdate = true;
+    }
+  } else if (phase === "bite") {
+    const shake = Math.sin(t * 28) * 0.08;
+    r.rotation.x = -0.4 + shake;
+    if (pole) pole.rotation.x = 0.35 + shake;
+    if (line) line.visible = true;
+  } else if (phase === "reel") {
+    r.rotation.x = -0.7 + Math.sin(t * 16) * 0.12;
+    l.rotation.x = -0.25;
+    if (pole) pole.rotation.x = 0.2;
+    if (line) line.visible = true;
+  } else {
+    r.rotation.x = 0;
+    l.rotation.x = 0;
+    if (pole) pole.rotation.x = 1.12;
+    if (line) line.visible = false;
+  }
 }
