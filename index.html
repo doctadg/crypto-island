@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Crypto Island</title>
+    <meta name="description" content="First-person fishing on a strange low-poly island." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%232c8a4a' width='64' height='64' rx='14'/%3E%3Crect fill='%23f4f6f2' x='22' y='14' width='20' height='36' rx='10'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <div id="boot" class="overlay">
+        <div class="boot-card">
+          <p class="kicker">LOCAL PLAYABLE PROTOTYPE</p>
+          <h1>CRYPTO ISLAND</h1>
+          <p class="lede">Burn tokens. Get a rod. Fish the island. Catch things that actually mean something.</p>
+          <ul class="boot-notes">
+            <li>WASD move · mouse look · Shift sprint · Space jump · C crouch</li>
+            <li>E interact · F / click cast when a rod is equipped</li>
+            <li>Wallet, burns and SOL payouts are <b>local preview</b> — no mainnet, no real funds</li>
+          </ul>
+          <button id="enter-btn" type="button">ENTER ISLAND</button>
+          <p class="fine">Phase 1 prototype. Style locked to the supplied island / character sheet.</p>
+        </div>
+      </div>
+
+      <div id="hud" class="hud hidden">
+        <div class="hud-top">
+          <div class="pill-mark" aria-hidden="true"></div>
+          <div>
+            <div class="brand">CRYPTO ISLAND</div>
+            <div id="zone-label" class="zone">MAIN DOCK</div>
+          </div>
+          <div class="hud-stats">
+            <span><em id="token-bal">240</em> TOKEN</span>
+            <span><em id="credit-bal">0</em> CREDITS</span>
+            <span><em id="catch-count">0</em> CATCHES</span>
+          </div>
+        </div>
+
+        <div id="crosshair"></div>
+        <div id="prompt" class="prompt"></div>
+        <div id="cast-meter" class="cast-meter hidden">
+          <div class="cast-track"><i id="cast-fill"></i></div>
+          <div id="cast-label">WAITING…</div>
+        </div>
+
+        <div class="hud-bottom">
+          <div id="rod-slot" class="slot empty">NO ROD</div>
+          <div class="keys">
+            <span>I inventory</span>
+            <span>B burn / shop</span>
+            <span>Tab journal</span>
+            <span>Esc release mouse</span>
+          </div>
+          <div id="demo-tag">DEMO ECONOMY · NO CHAIN</div>
+        </div>
+      </div>
+
+      <div id="toast" class="toast hidden"></div>
+
+      <aside id="panel" class="panel hidden" aria-hidden="true"></aside>
+
+      <div id="touch" class="touch hidden">
+        <div id="stick" class="stick"><i></i></div>
+        <div class="touch-actions">
+          <button type="button" data-act="jump">JUMP</button>
+          <button type="button" data-act="use">USE</button>
+          <button type="button" data-act="cast">CAST</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
