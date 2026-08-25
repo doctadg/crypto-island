@@ -1,4 +1,4 @@
-# Crypto Island
+# PUMPISLAND
 
 Playable Phase 1 prototype of the isolated low-poly fishing island.
 
