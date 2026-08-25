@@ -30,7 +30,7 @@ const touch = document.getElementById("touch");
 
 const econ = createEconomy();
 const keys = Object.create(null);
-const look = { x: Math.PI, y: 0 };
+const look = { x: 0, y: 0 };
 const vel = new THREE.Vector3();
 const wish = new THREE.Vector3();
 const tmp = new THREE.Vector3();
@@ -49,7 +49,7 @@ let stepAcc = 0;
 let wasGrounded = true;
 let fovSmoothed = 72;
 let shopTab = "rods";
-const lookSmoothed = { x: Math.PI, y: 0 };
+const lookSmoothed = { x: 0, y: 0 };
 const mobile = matchMedia("(pointer: coarse)").matches;
 const stick = { active: false, x: 0, y: 0, id: null };
 

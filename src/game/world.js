@@ -8,15 +8,16 @@ const BLOCKS = [];
 function block(x, z, r) {
   BLOCKS.push({ x, z, r });
 }
-export function resolveCollision(x, z) {
+export function resolveCollision(x, z, radius = 0.42) {
   let nx = x;
   let nz = z;
   for (const b of BLOCKS) {
     const dx = nx - b.x;
     const dz = nz - b.z;
     const d = Math.hypot(dx, dz);
-    if (d < b.r && d > 0.0001) {
-      const k = b.r / d;
+    const need = b.r + radius;
+    if (d < need && d > 0.0001) {
+      const k = need / d;
       nx = b.x + dx * k;
       nz = b.z + dz * k;
     }
@@ -404,11 +405,24 @@ function caveMouth() {
   return g;
 }
 
-function place(root, obj, x, z, rot = 0, yOff = 0) {
+function place(root, obj, x, z, rot = 0, yOff = 0, solidR = 0) {
   obj.position.set(x, heightAt(x, z) + yOff, z);
   obj.rotation.y = rot;
   root.add(obj);
-  return obj;
+  if (solidR > 0) block(x, z, solidR);
+}
+
+function pathBoards(root) {
+  for (let i = 0; i < 20; i++) {
+    const z = 26.2 - i * 1.12;
+    const x = 0.18;
+    const y0 = heightAt(x, z);
+    const y1 = heightAt(x, z - 1.12);
+    const plank = mesh(new THREE.BoxGeometry(1.42, 0.08, 1.14), i % 2 ? C.dirt : 0x7a6540);
+    plank.position.set(x, y0 + 0.04, z);
+    plank.rotation.x = -Math.atan2(y1 - y0, 1.12);
+    root.add(plank);
+  }
 }
 
 export const ZONES = [
@@ -432,6 +446,7 @@ export function zoneAt(x, z) {
 }
 
 export function createWorld(scene) {
+  BLOCKS.length = 0;
   const root = new THREE.Group();
   root.name = "island";
 
@@ -450,38 +465,42 @@ export function createWorld(scene) {
   root.add(light);
   block(0, -1.2, 3.1);
 
-  const climb = stairs(12, 0.18, 0.4);
-  climb.position.set(0, peak - 2.05, 3.4);
+  const climb = new THREE.Group();
+  for (let i = 0; i < 14; i++) {
+    const z = 5.8 - i * 0.38;
+    const y = heightAt(0, z);
+    const step = mesh(new THREE.BoxGeometry(1.4, 0.1, 0.4), C.wood);
+    step.position.set(0, y + 0.05, z);
+    climb.add(step);
+  }
   root.add(climb);
 
   const mainDock = dock(12, 2.15);
   mainDock.position.set(1.6, 0.12, 31.4);
   root.add(mainDock);
-  place(root, hut(C.white), -6.8, 22.4, 0.25);
-  block(-6.8, 22.4, 1.8);
-  place(root, hut(C.green), 8.6, 21.6, -0.3);
-  block(8.6, 21.6, 1.8);
+  place(root, hut(C.white), -6.8, 22.4, 0.25, 0, 1.8);
+  place(root, hut(C.green), 8.6, 21.6, -0.3, 0, 1.8);
 
   const northDock = dock(10.5, 1.7);
   northDock.position.set(-27.2, 0.12, 8.0);
   northDock.rotation.y = 1.2;
   root.add(northDock);
-  place(root, hut(0xd2b36a), -19.2, 6.4, 0.4);
+  place(root, hut(0xd2b36a), -19.2, 6.4, 0.4, 0, 1.7);
   const skiff = boat();
   skiff.position.set(-31, 0.18, 5.6);
   skiff.rotation.y = 0.45;
   root.add(skiff);
 
-  place(root, watchtower(), -16.8, 17.6, 0.2, -0.1);
-  place(root, caveMouth(), 17.2, 20.6, 0.45, -0.35);
+  place(root, watchtower(), -16.8, 17.6, 0.2, -0.1, 1.6);
+  place(root, caveMouth(), 17.2, 20.6, 0.45, -0.35, 2.4);
   const caveDock = dock(4.4, 1.25);
   caveDock.position.set(18.8, 0.12, 24.2);
   caveDock.rotation.y = 0.4;
   root.add(caveDock);
 
-  place(root, hut(C.green), 25.2, 8.8, -0.4);
-  place(root, hut(0xd2b36a), 28.4, 12.4, -0.55);
-  place(root, bench(), 23.6, 11.2, -0.7);
+  place(root, hut(C.green), 25.2, 8.8, -0.4, 0, 1.7);
+  place(root, hut(0xd2b36a), 28.4, 12.4, -0.55, 0, 1.7);
+  place(root, bench(), 23.6, 11.2, -0.7, 0, 0.7);
 
   for (const [x, z] of [
     [22, 6.2],
@@ -490,7 +509,7 @@ export function createWorld(scene) {
     [27.6, 15.5],
     [21.5, 14.2],
   ]) {
-    place(root, palm(), x, z);
+    place(root, palm(), x, z, 0, 0, 0.7);
   }
 
   for (const [x, z] of [
@@ -506,7 +525,7 @@ export function createWorld(scene) {
     [1.2, -17.6],
     [7.4, -8.2],
   ]) {
-    place(root, pine(3.8 + ((x + z) % 5) * 0.22), x, z);
+    place(root, pine(3.8 + ((x + z) % 5) * 0.22), x, z, 0, 0, 0.85);
   }
 
   for (const [x, z, rot] of [
@@ -519,7 +538,7 @@ export function createWorld(scene) {
     [20.4, -7.2, 0.5],
     [-17.2, 12.4, 0.3],
   ]) {
-    place(root, pillFlag(), x, z, rot);
+    place(root, pillFlag(), x, z, rot, 0, 0.28);
   }
 
   for (const [x, z] of [
@@ -531,21 +550,18 @@ export function createWorld(scene) {
     [-3.6, -7.4],
     [6.8, 10.2],
   ]) {
-    place(root, crate(), x, z, x * 0.15);
+    place(root, crate(), x, z, x * 0.15, 0, 0.7);
   }
 
   const f1 = fence(11);
-  place(root, f1, 7.4, -3.6, 0.45);
+  place(root, f1, 7.4, -3.6, 0.45, 0, 0.45);
   const f2 = fence(8.5);
-  place(root, f2, -5.6, -7.2, -0.5);
+  place(root, f2, -5.6, -7.2, -0.5, 0, 0.45);
 
   place(root, torch(), -1.15, 8.4);
   place(root, torch(), 1.35, 8.4);
 
-  const dirt = mesh(new THREE.BoxGeometry(1.7, 0.06, 14), C.dirt);
-  dirt.position.set(0.15, heightAt(0.2, 12) + 0.02, 11.5);
-  dirt.rotation.x = -0.08;
-  root.add(dirt);
+  pathBoards(root);
 
   for (const [x, z] of [
     [3.2, 18.4], [5.1, 14.2], [-4.4, 16.6], [2.2, 8.8], [-2.6, 11.4],
@@ -587,6 +603,7 @@ export function createWorld(scene) {
     c.rotation.y = n.rot;
     c.userData.npc = true;
     root.add(c);
+    block(n.x, n.z, 0.45);
     people.push(c);
   }
 
