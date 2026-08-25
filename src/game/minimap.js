@@ -166,7 +166,7 @@ export function createMinimap(canvas) {
   const labels = [
     { t: "HOME", x: 0, z: 8, fill: "#f4f7f2" },
     { t: "DOCK", x: 8, z: 36, fill: "#f4f7f2" },
-    { t: "EMBER", x: ISLAND2.x, z: ISLAND2.z, fill: "#ffd0c0" },
+    { t: "ST ALON", x: ISLAND2.x, z: ISLAND2.z, fill: "#ffd0c0" },
   ];
   b.font = "700 9px ui-monospace, SFMono-Regular, Menlo, monospace";
   b.textAlign = "center";

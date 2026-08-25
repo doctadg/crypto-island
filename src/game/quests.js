@@ -6,7 +6,7 @@ export function questStatus(state) {
     { id: "cast", label: "Land a catch from the water", done: (state.caught || 0) > 0 },
     { id: "redeem", label: "Redeem a catch at the hut counter", done: (state.claims || []).length > 0 },
     { id: "skiff", label: "Buy the Island Skiff in Shop · GEAR", done: !!state.boat },
-    { id: "sail", label: "Sail the skiff to Ember Atoll", done: !!state.visitedEmber },
-    { id: "ember", label: "Catch a fish on Ember Atoll", done: emberCatch },
+    { id: "sail", label: "Sail the skiff to Great Saint Alon", done: !!state.visitedEmber },
+    { id: "ember", label: "Catch a fish on Great Saint Alon", done: emberCatch },
   ];
 }

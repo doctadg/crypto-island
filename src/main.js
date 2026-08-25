@@ -407,7 +407,7 @@ function tryInteract() {
       toast("Buy the Island Skiff in Shop · GEAR first.");
       return;
     }
-    startSail(EMBER_BOAT, "Ember Atoll");
+    startSail(EMBER_BOAT, "Great Saint Alon");
     return;
   }
   if (lastInteract.id === "emberdock") {
@@ -669,7 +669,7 @@ function stepSail(dt) {
   if (k >= 1) {
     const name = sailing.label;
     sailing = null;
-    if (name === "Ember Atoll") econ.markEmber();
+    if (name === "Great Saint Alon") econ.markEmber();
     toast(`Landed · ${name}`);
     paintHud();
   }

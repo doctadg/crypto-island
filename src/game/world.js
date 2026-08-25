@@ -690,9 +690,9 @@ export const ZONES = [
   { id: "FOREST", label: "PINE WOODS", hint: "No fishing", x: 10, z: -14, r: 10, fish: false },
   { id: "LIGHTHOUSE", label: "LIGHTHOUSE", hint: "Shop + burns", x: 0, z: -1, r: 8, fish: false },
   { id: "VILLAGE", label: "HUT ROW", hint: "Redeem counter", x: 6, z: 22, r: 6, fish: false },
-  { id: "EMBER_SHORE", label: "EMBER SHORE", hint: "Second island shallows", x: 118, z: 16, r: 12, fish: true },
-  { id: "EMBER_POOL", label: "EMBER POOL", hint: "Need Offshore Rod", x: 116, z: -8, r: 9, fish: true },
-  { id: "EMBER_HILL", label: "EMBER HILL", hint: "Ash ridge", x: 118, z: -8, r: 10, fish: false },
+  { id: "EMBER_SHORE", label: "ST ALON SHORE", hint: "Great Saint Alon shallows", x: 118, z: 16, r: 12, fish: true },
+  { id: "EMBER_POOL", label: "ST ALON POOL", hint: "Need Offshore Rod", x: 116, z: -8, r: 9, fish: true },
+  { id: "EMBER_HILL", label: "ST ALON HILL", hint: "Ash ridge", x: 118, z: -8, r: 10, fish: false },
 ];
 
 export function zoneAt(x, z) {
@@ -883,7 +883,7 @@ export function createWorld(scene) {
   root.add(emberDock);
   place(root, hut(0xc44a3a), ISLAND2.x - 4, ISLAND2.z + 14, 0.2, 0, 1.7);
   place(root, hut(C.woodDark), ISLAND2.x + 6, ISLAND2.z + 8, -0.4, 0, 1.7);
-  place(root, signPost("EMBER ATOLL"), ISLAND2.x - 2, ISLAND2.z + 20, 0.3, 0, 0.4);
+  place(root, signPost("GREAT SAINT ALON"), ISLAND2.x - 2, ISLAND2.z + 20, 0.3, 0, 0.4);
   place(root, boulder(), ISLAND2.x + 8, ISLAND2.z - 4, 0.4, 0, 0.7);
   place(root, boulder(), ISLAND2.x - 10, ISLAND2.z - 6, -0.2, 0, 0.7);
 
@@ -947,5 +947,5 @@ export const INTERACTS = [
   { id: "duck", label: "E  Rubber duck", x: 8.4, z: 34.6, r: 2.2 },
   { id: "chest", label: "E  Chest", x: 21.2, z: 22.6, r: 2 },
   { id: "crash", label: "E  Airdrop", x: -26.4, z: 12.2, r: 2.2 },
-  { id: "emberdock", label: "E  Ember dock", x: 112, z: 14, r: 3.2 },
+  { id: "emberdock", label: "E  Saint Alon dock", x: 112, z: 14, r: 3.2 },
 ];

@@ -22,7 +22,7 @@ export const RODS = {
     burn: 360,
     luck: 18,
     zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES", "OFFSHORE", "EMBER_SHORE", "EMBER_POOL"],
-    note: "Opens the deep offshore pool and Ember Atoll.",
+    note: "Opens the deep offshore pool and Great Saint Alon.",
   },
 };
 
@@ -41,7 +41,7 @@ export const CATCHES = [
   { id: "moon_marlin", name: "Moon Marlin", rarity: "Mythic", kind: "sol", value: 0.18, zones: ["OFFSHORE"], minRod: "elite", blurb: "Night-silver marlin. Only the offshore black water.", trade: "Redeems for 0.18 SOL (preview)." },
   { id: "jackpot_leviathan", name: "Jackpot Leviathan", rarity: "Mythic", kind: "sol", value: 0.25, zones: ["OFFSHORE"], minRod: "elite", blurb: "The island’s jackpot. Almost nobody lands it.", trade: "Redeems for 0.25 SOL (preview)." },
   { id: "vault_whale", name: "Vault Whale", rarity: "Mythic", kind: "bundle", value: 1, zones: ["OFFSHORE"], minRod: "elite", blurb: "A pale whale calf with a vault lock on its tail.", trade: "Redeems for 200 credits + 40 TOKEN + 0.05 SOL (preview)." },
-  { id: "cinder_bass", name: "Cinder Bass", rarity: "Uncommon", kind: "credits", value: 28, zones: ["EMBER_SHORE"], minRod: "basic", blurb: "Warm-water bass off Ember Atoll.", trade: "Redeems for 28 credits." },
+  { id: "cinder_bass", name: "Cinder Bass", rarity: "Uncommon", kind: "credits", value: 28, zones: ["EMBER_SHORE"], minRod: "basic", blurb: "Warm-water bass off Great Saint Alon.", trade: "Redeems for 28 credits." },
   { id: "ash_trout", name: "Ash Trout", rarity: "Rare", kind: "token", value: 22, zones: ["EMBER_SHORE", "EMBER_POOL"], minRod: "advanced", blurb: "Grey-speckled trout from the lava shelf.", trade: "Redeems for 22 native TOKEN." },
   { id: "ember_eel", name: "Ember Eel", rarity: "Epic", kind: "credits", value: 160, zones: ["EMBER_POOL"], minRod: "elite", blurb: "Glows in the black pool. Don’t drop it.", trade: "Redeems for 160 credits." },
 ];
@@ -65,7 +65,7 @@ export const SHOP_GEAR = [
     id: "skiff",
     name: "Island Skiff",
     cost: 160,
-    note: "Sail to Ember Atoll. Preview boat. Local only.",
+    note: "Sail to Great Saint Alon. Preview boat. Local only.",
   },
 ];
 
