@@ -135,7 +135,7 @@ button { font-family: inherit; cursor: pointer; }
   position: absolute;
   right: 16px;
   bottom: 16px;
-  width: 188px;
+  width: 212px;
   pointer-events: none;
   z-index: 9;
 }
@@ -271,11 +271,11 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--warn);
 }
 .minimap-wrap {
-  width: 188px;
+  width: 212px;
 }
 #minimap {
-  width: 188px;
-  height: 188px;
+  width: 212px;
+  height: 212px;
   display: block;
   border: 1px solid rgba(125,227,154,0.45);
   background: #16382a;
