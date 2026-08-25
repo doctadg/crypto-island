@@ -174,8 +174,8 @@ export function createCharacter(archetype = "DEFAULT", opts = {}) {
     }
   }
 
-  const decal = pillDecal(spec.extra === "tee" || spec.extra === "hawaii" ? 1.2 : 0.85);
-  decal.position.set(0.07, 0.5, 0.155);
+  const decal = pillDecal(spec.extra === "tee" || spec.extra === "hawaii" ? 1.15 : 0.8);
+  decal.position.set(0.0, 0.48, 0.17);
   hips.add(decal);
 
   const neck = cyl(0.055, 0.06, 0.16, C.skin, 0.78, 6);

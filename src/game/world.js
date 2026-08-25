@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { C, ISLAND_R } from "./palette.js";
 import { createCharacter } from "./characters.js";
 import { createWater } from "./atmosphere.js";
-import { pillSprite } from "./pill.js";
+import { createPillMesh } from "./pill.js";
 
 const BLOCKS = [];
 function block(x, z, r) {
@@ -159,7 +159,7 @@ function seagull() {
 }
 
 function pillMark(scale = 1) {
-  return pillSprite(scale);
+  return createPillMesh(scale);
 }
 
 function pillFlag() {
@@ -168,8 +168,8 @@ function pillFlag() {
   pole.position.y = 1.7;
   const cloth = mesh(new THREE.BoxGeometry(0.95, 1.25, 0.04), C.white);
   cloth.position.set(0.52, 2.55, 0);
-  const p = pillMark(0.32);
-  p.position.set(0.52, 2.55, 0.05);
+  const p = pillMark(0.28);
+  p.position.set(0.52, 2.55, 0.06);
   g.add(pole, cloth, p);
   return g;
 }
@@ -180,8 +180,8 @@ function crate() {
   box.position.y = 0.36;
   const stripe = mesh(new THREE.BoxGeometry(0.97, 0.16, 0.74), C.green);
   stripe.position.y = 0.42;
-  const p = pillMark(0.22);
-  p.position.set(0, 0.55, 0.38);
+  const p = pillMark(0.2);
+  p.position.set(0, 0.52, 0.39);
   g.add(box, stripe, p);
   return g;
 }
@@ -294,8 +294,8 @@ function watchtower() {
   const rail = mesh(new THREE.BoxGeometry(2.05, 0.35, 2.05), C.woodMid);
   rail.position.y = 3.72;
   g.add(deck, roof, rail);
-  const mark = pillMark(0.28);
-  mark.position.set(0, 3.95, 1.05);
+  const mark = pillMark(0.24);
+  mark.position.set(0, 3.92, 1.04);
   g.add(mark);
   return g;
 }
@@ -381,8 +381,8 @@ function lighthouse() {
   const walk = mesh(new THREE.CylinderGeometry(1.78, 1.78, 0.1, 12), C.woodDark);
   walk.position.y = 8.22;
 
-  const mark = pillMark(1);
-  mark.position.set(0, 4.45, 2.2);
+  const mark = pillMark(1.05);
+  mark.position.set(0, 4.78, 2.28);
 
   g.add(base, mid, band, top, lantern, cap, spike, door, balcony, walk, mark);
   return g;
@@ -595,8 +595,8 @@ export function createWorld(scene) {
 }
 
 export const INTERACTS = [
-  { id: "shop", label: "E  Burn TOKEN for a rod", x: 0, z: 3.8, r: 3.4 },
-  { id: "board", label: "E  Catch journal / leaderboard", x: 1.4, z: 8.2, r: 2.4 },
-  { id: "redeem", label: "E  Redemption counter", x: 4.2, z: 24.4, r: 2.6 },
-  { id: "boat", label: "E  Board skiff (offshore preview)", x: -31, z: 5.6, r: 3 },
+  { id: "shop", label: "E  Shop", x: 0, z: 3.8, r: 3.4 },
+  { id: "board", label: "E  Log", x: 1.4, z: 8.2, r: 2.4 },
+  { id: "redeem", label: "E  Redeem", x: 4.2, z: 24.4, r: 2.6 },
+  { id: "boat", label: "E  Boat", x: -31, z: 5.6, r: 3 },
 ];

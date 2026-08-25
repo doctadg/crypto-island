@@ -30,7 +30,7 @@ const touch = document.getElementById("touch");
 
 const econ = createEconomy();
 const keys = Object.create(null);
-const look = { x: 0, y: 0 };
+const look = { x: Math.PI, y: 0 };
 const vel = new THREE.Vector3();
 const wish = new THREE.Vector3();
 const tmp = new THREE.Vector3();
@@ -48,9 +48,8 @@ let bobT = 0;
 let stepAcc = 0;
 let wasGrounded = true;
 let fovSmoothed = 72;
-let lastZone = "";
 let shopTab = "rods";
-const lookSmoothed = { x: 0, y: 0 };
+const lookSmoothed = { x: Math.PI, y: 0 };
 const mobile = matchMedia("(pointer: coarse)").matches;
 const stick = { active: false, x: 0, y: 0, id: null };
 
@@ -502,24 +501,19 @@ function updatePrompt() {
   }
   const zone = zoneAt(p.x, p.z);
   zoneEl.textContent = zone.label;
-  if (zone.label !== lastZone) {
-    lastZone = zone.label;
-    if (playing && lastZone !== "ISLAND PATH") toast(lastZone);
-  }
   if (panelOpen) {
     promptEl.textContent = "";
     return;
   }
   if (lastInteract) promptEl.textContent = lastInteract.label;
-  else if (lookingAtWater().ok) promptEl.textContent = econ.state.equipped === "none" ? "Need a rod · E at the lighthouse" : "F / click to cast";
-  else if (zone.fish) promptEl.textContent = "Look at the water to cast";
+  else if (lookingAtWater().ok && econ.state.equipped !== "none") promptEl.textContent = "Cast";
   else promptEl.textContent = "";
 }
 
 function applyLook(dx, dy) {
-  look.x -= dx * 0.00205;
-  look.y -= dy * 0.00205;
-  look.y = Math.max(-1.15, Math.min(1.15, look.y));
+  look.x -= dx * 0.00225;
+  look.y -= dy * 0.00225;
+  look.y = Math.max(-1.2, Math.min(1.2, look.y));
 }
 
 function stepPlayer(dt) {
@@ -539,7 +533,7 @@ function stepPlayer(dt) {
   }
   if (wish.lengthSq() > 1) wish.normalize();
   wish.applyAxisAngle(tmp.set(0, 1, 0), look.x);
-  const accel = onWater ? 8 : 13;
+  const accel = onWater ? 9 : 11;
   vel.x += (wish.x * speed - vel.x) * Math.min(1, dt * accel);
   vel.z += (wish.z * speed - vel.z) * Math.min(1, dt * accel);
 
@@ -566,8 +560,8 @@ function stepPlayer(dt) {
   const floor = heightAt(camera.position.x, camera.position.z) + eyeHeight();
   const grounded = camera.position.y <= floor + 0.08;
   const rise = floor - camera.position.y;
-  if (rise > 0 && rise < 1.15 && vel.y <= 0.4) {
-    camera.position.y += Math.min(rise, dt * 7.2);
+  if (rise > 0 && rise < 1.35 && vel.y <= 1.2) {
+    camera.position.y += Math.min(rise, dt * 5.4);
     vel.y = Math.max(vel.y, 0);
   } else if (camera.position.y < floor) {
     camera.position.y = floor;
@@ -579,10 +573,10 @@ function stepPlayer(dt) {
   }
   wasGrounded = grounded;
 
-  lookSmoothed.x += (look.x - lookSmoothed.x) * Math.min(1, dt * 18);
-  lookSmoothed.y += (look.y - lookSmoothed.y) * Math.min(1, dt * 18);
-  camera.rotation.y = lookSmoothed.x;
-  camera.rotation.x = lookSmoothed.y;
+  lookSmoothed.x = look.x;
+  lookSmoothed.y = look.y;
+  camera.rotation.y = look.x;
+  camera.rotation.x = look.y;
 
   const moving = Math.hypot(vel.x, vel.z) > 0.4 && grounded;
   if (moving) {
