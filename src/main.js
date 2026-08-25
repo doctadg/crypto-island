@@ -3,6 +3,7 @@ import { C, SPAWN } from "./game/palette.js";
 import { createWorld, heightAt, zoneAt, INTERACTS, resolveCollision } from "./game/world.js";
 import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game/characters.js";
 import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, tradeLine } from "./game/economy.js";
+import { iconRod, iconSwap, iconMerch, iconFish, iconStat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
 import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp } from "./game/atmosphere.js";
 
@@ -125,6 +126,11 @@ function paintHud() {
   }
 }
 
+function freeMouse() {
+  if (document.pointerLockElement) document.exitPointerLock();
+  pointerLocked = false;
+}
+
 function closePanel() {
   panelOpen = null;
   panel.classList.add("hidden");
@@ -133,6 +139,7 @@ function closePanel() {
 }
 
 function openPanel(kind) {
+  freeMouse();
   panelOpen = kind;
   panel.classList.remove("hidden");
   panel.setAttribute("aria-hidden", "false");
@@ -142,83 +149,111 @@ function openPanel(kind) {
   else if (kind === "redeem") renderInv(true);
 }
 
+function walletChip() {
+  const w = econ.state.wallet;
+  return `<div class="shop-wallet">
+    <div>
+      <b>${w ? "Preview wallet" : "No wallet"}</b>
+      <span>${w || "Local demo only"}</span>
+    </div>
+    <button type="button" data-act="connect">${w ? "LINKED" : "LINK"}</button>
+  </div>`;
+}
+
 function renderShop() {
-  const w = econ.state.wallet || "not linked";
   const tab = shopTab;
   const rods = Object.values(RODS)
     .filter((r) => r.id !== "none")
     .map((r) => {
       const owned = econ.state.rods.includes(r.id);
-      return `<div class="row">
-          <div>
-            <b>${r.name}</b>
-            <span>Burn ${r.burn} TOKEN · ${r.note}</span>
-          </div>
-          ${
-            owned
-              ? `<button type="button" data-act="equip" data-id="${r.id}" ${econ.state.equipped === r.id ? "disabled" : ""}>${econ.state.equipped === r.id ? "EQUIPPED" : "EQUIP"}</button>`
-              : `<button class="primary" type="button" data-act="burn" data-id="${r.id}">BURN ${r.burn}</button>`
-          }
-        </div>`;
+      const on = econ.state.equipped === r.id;
+      return `<article class="card">
+        <div class="art">${iconRod(r.id)}</div>
+        <div class="copy">
+          <b>${r.name}</b>
+          <span>${r.note}</span>
+          <i class="tag token">BURN ${r.burn} TOKEN</i>
+        </div>
+        ${
+          owned
+            ? `<button type="button" data-act="equip" data-id="${r.id}" ${on ? "disabled" : ""}>${on ? "ON" : "EQUIP"}</button>`
+            : `<button class="primary" type="button" data-act="burn" data-id="${r.id}">BURN</button>`
+        }
+      </article>`;
     })
     .join("");
   const swaps = SHOP_SWAPS.map(
-    (o) => `<div class="row">
-      <div><b>${o.name}</b><span>${o.cost} credits · ${o.note}</span></div>
+    (o) => `<article class="card">
+      <div class="art">${iconSwap(o.id)}</div>
+      <div class="copy">
+        <b>${o.name}</b>
+        <span>${o.note}</span>
+        <i class="tag">${o.cost} CREDITS</i>
+      </div>
       <button class="primary" type="button" data-act="swap" data-id="${o.id}">SWAP</button>
-    </div>`
+    </article>`
   ).join("");
   const merch = SHOP_MERCH.map(
-    (o) => `<div class="row">
-      <div><b>${o.name}</b><span>${o.cost} credits · ${o.note}</span></div>
+    (o) => `<article class="card">
+      <div class="art">${iconMerch(o.id)}</div>
+      <div class="copy">
+        <b>${o.name}</b>
+        <span>${o.note}</span>
+        <i class="tag merch">${o.cost} CREDITS</i>
+      </div>
       <button class="primary" type="button" data-act="merch" data-id="${o.id}">BUY</button>
-    </div>`
+    </article>`
   ).join("");
   const locker = econ.state.merch.length
-    ? econ.state.merch.map((m) => `<div class="row"><div><b>${m.name}</b><span>preview locker</span></div></div>`).join("")
-    : `<p class="sub">No merch claims yet.</p>`;
+    ? `<div class="locker">${econ.state.merch.map((m) => `<span>${m.name}</span>`).join("")}</div>`
+    : `<p class="sub">Locker empty.</p>`;
   panel.innerHTML = `
     <button class="close-x" type="button" data-act="close">✕</button>
-    <h2>Lighthouse shop</h2>
-    <p class="sub">${econ.state.credits} credits · ${econ.state.tokens} TOKEN · ${econ.state.previewSol.toFixed(2)} preview SOL · ${w}</p>
+    <p class="mini">LIGHTHOUSE</p>
+    <h2>Shop</h2>
+    <div class="wallet-line">
+      <span><em>${econ.state.credits}</em>CR</span>
+      <span><em>${econ.state.tokens}</em>TOKEN</span>
+      <span><em>${econ.state.previewSol.toFixed(2)}</em>SOL</span>
+    </div>
     <div class="tabs">
       <button type="button" data-act="tab" data-id="rods" class="${tab === "rods" ? "on" : ""}">RODS</button>
       <button type="button" data-act="tab" data-id="swap" class="${tab === "swap" ? "on" : ""}">SWAPS</button>
       <button type="button" data-act="tab" data-id="merch" class="${tab === "merch" ? "on" : ""}">MERCH</button>
     </div>
-    ${tab === "rods" ? `<div class="row"><div><b>Preview wallet</b><span>${w}</span></div>
-      <button type="button" data-act="connect">${econ.state.wallet ? "LINKED" : "LINK"}</button></div>${rods}<p class="sub">Burned this preview: ${econ.state.burned} TOKEN</p>` : ""}
-    ${tab === "swap" ? `${swaps}<p class="sub">Credits swap into TOKEN or preview SOL. No chain write.</p>` : ""}
-    ${tab === "merch" ? `${merch}${locker}<p class="sub">Merch is a preview locker claim. Nothing ships.</p>` : ""}
+    ${tab === "rods" ? `${walletChip()}<div class="cards">${rods}</div><p class="sub">Burned ${econ.state.burned} TOKEN · preview only</p>` : ""}
+    ${tab === "swap" ? `<div class="cards">${swaps}</div><p class="sub">Credits → TOKEN or preview SOL. No chain.</p>` : ""}
+    ${tab === "merch" ? `<div class="cards">${merch}</div>${locker}<p class="sub">Preview locker. Nothing ships.</p>` : ""}
   `;
 }
 
 function renderInv(redeemFocus = false) {
   const items = econ.state.inventory;
+  const cards = items.length
+    ? items
+        .map(
+          (it) => `<article class="card">
+        <div class="art">${iconFish(it.id)}</div>
+        <div class="copy">
+          <b>${it.name}</b>
+          <span>${it.blurb || tradeLine(it)}</span>
+          <i class="tag ${it.kind}">${it.rarity} · ${kindLabel(it.kind)}</i>
+        </div>
+        ${
+          it.status === "redeemable"
+            ? `<button class="primary" type="button" data-act="redeem" data-id="${it.uid}">REDEEM</button>`
+            : `<em class="kept">${it.status.toUpperCase()}</em>`
+        }
+      </article>`
+        )
+        .join("")
+    : `<p class="empty-pack">Nothing in the pack. Fish the docks.</p>`;
   panel.innerHTML = `
     <button class="close-x" type="button" data-act="close">✕</button>
-    <h2>${redeemFocus ? "Redemption counter" : "Inventory"}</h2>
-    <p class="sub">${redeemFocus ? "Preview claims only. SOL and merch do not leave this browser." : "Catches stay on this machine until you redeem them."}</p>
-    ${
-      items.length
-        ? items
-            .map(
-              (it) => `<div class="row">
-          <div>
-            <b>${it.name}</b>
-            <span>${it.rarity} · ${tradeLine(it)}</span>
-            <i class="tag ${it.kind}">${kindLabel(it.kind)}</i>
-          </div>
-          ${
-            it.status === "redeemable"
-              ? `<button class="primary" type="button" data-act="redeem" data-id="${it.uid}">REDEEM</button>`
-              : `<span>${it.status.toUpperCase()}</span>`
-          }
-        </div>`
-            )
-            .join("")
-        : `<p class="sub">Empty. Fish the docks.</p>`
-    }
+    <p class="mini">${redeemFocus ? "COUNTER" : "PACK"}</p>
+    <h2>${redeemFocus ? "Redeem" : "Catch pack"}</h2>
+    <p class="sub">${redeemFocus ? "Preview claims. SOL and merch stay in this browser." : "Each catch shows what it trades for."}</p>
+    <div class="cards">${cards}</div>
     <p class="sub">Preview SOL claimed: ${econ.state.previewSol.toFixed(2)}</p>
   `;
 }
@@ -226,16 +261,20 @@ function renderInv(redeemFocus = false) {
 function renderBoard() {
   const counts = {};
   for (const it of econ.state.inventory) counts[it.rarity] = (counts[it.rarity] || 0) + 1;
+  const rares = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"]
+    .map((r) => `<div class="stat-pill"><b>${counts[r] || 0}</b><span>${r}</span></div>`)
+    .join("");
   panel.innerHTML = `
     <button class="close-x" type="button" data-act="close">✕</button>
-    <h2>Island journal</h2>
-    <p class="sub">Local session stats. Not a live network.</p>
-    <div class="row"><div><b>Fish landed</b><span>this browser</span></div><b>${econ.state.caught}</b></div>
-    <div class="row"><div><b>Tokens burned</b><span>preview</span></div><b>${econ.state.burned}</b></div>
-    <div class="row"><div><b>Credits</b><span>cosmetics / boats later</span></div><b>${econ.state.credits}</b></div>
-    ${["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"]
-      .map((r) => `<div class="row"><div><b>${r}</b></div><span>${counts[r] || 0}</span></div>`)
-      .join("")}
+    <p class="mini">JOURNAL</p>
+    <h2>Island log</h2>
+    <p class="sub">This browser only. Not a live network.</p>
+    <div class="stat-grid">
+      <div class="stat-card">${iconStat("fish")}<b>${econ.state.caught}</b><span>Landed</span></div>
+      <div class="stat-card">${iconStat("burn")}<b>${econ.state.burned}</b><span>Burned</span></div>
+      <div class="stat-card">${iconStat("credits")}<b>${econ.state.credits}</b><span>Credits</span></div>
+    </div>
+    <div class="rarity-row">${rares}</div>
   `;
 }
 
@@ -366,6 +405,7 @@ function showCatch(item) {
   catchCard.classList.remove("hidden");
   catchTimer = 8;
   catchProp.visible = true;
+  freeMouse();
   sfx.catch(item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "Epic");
 }
 

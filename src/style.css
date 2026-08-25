@@ -227,28 +227,90 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 .panel {
-  position: fixed; top: 78px; right: 16px; bottom: 78px;
-  width: min(390px, calc(100vw - 24px));
+  position: fixed; top: 70px; right: 16px; bottom: 72px;
+  width: min(430px, calc(100vw - 20px));
   z-index: 11;
   overflow: auto;
-  padding: 18px 16px 16px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(14px);
+  padding: 20px 16px 22px;
+  background:
+    linear-gradient(180deg, rgba(16, 28, 20, 0.94), rgba(8, 14, 12, 0.96));
+  border: 1px solid rgba(110, 209, 138, 0.28);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  backdrop-filter: blur(18px);
   pointer-events: auto;
 }
-.panel h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.03em; }
-.panel .sub { margin: 0 0 14px; color: #9eae9c; font: 12px/1.4 var(--mono); }
-.row {
+.panel .mini { margin-bottom: 4px; }
+.panel h2 { margin: 0 0 10px; font-size: 28px; letter-spacing: -0.04em; }
+.panel .sub { margin: 12px 0 0; color: #9eae9c; font: 12px/1.4 var(--mono); }
+.wallet-line {
+  display: flex; gap: 10px; margin: 0 0 14px;
+}
+.wallet-line span {
+  flex: 1; padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+  font: 600 10px/1 var(--mono); color: #9eae9c;
+}
+.wallet-line em { display: block; font-style: normal; color: var(--foam); font-size: 16px; margin-bottom: 4px; }
+.shop-wallet {
   display: grid; grid-template-columns: 1fr auto; gap: 10px;
   align-items: center;
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
+  margin: 0 0 12px; padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
 }
-.row b { display: block; font-size: 14px; }
-.row span { color: #9eae9c; font-size: 12px; }
+.shop-wallet b { display: block; font-size: 13px; }
+.shop-wallet span { color: #9eae9c; font-size: 11px; }
+.cards { display: grid; gap: 10px; }
+.card {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: rgba(244,247,242,0.03);
+}
+.art {
+  width: 72px; height: 72px;
+  display: grid; place-items: center;
+  background:
+    radial-gradient(circle at 40% 30%, rgba(110,209,138,0.18), transparent 60%),
+    #101810;
+  border: 1px solid rgba(244,247,242,0.08);
+}
+.thumb { width: 64px; height: 64px; display: block; }
+.copy b { display: block; font-size: 15px; margin-bottom: 3px; }
+.copy span { display: block; color: #9eae9c; font-size: 12px; line-height: 1.35; }
+.card button { min-width: 74px; }
+.kept { font: 700 11px/1 var(--mono); color: #8a9888; }
+.locker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.locker span {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  font: 600 11px/1 var(--mono);
+}
+.empty-pack { margin: 18px 0; color: #9eae9c; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0 14px; }
+.stat-card {
+  padding: 10px 8px 12px;
+  border: 1px solid var(--line);
+  text-align: center;
+  background: rgba(255,255,255,0.03);
+}
+.stat-card .thumb { width: 40px; height: 40px; margin: 0 auto 6px; }
+.stat-card b { display: block; font-size: 22px; }
+.stat-card span { color: #9eae9c; font: 600 10px/1 var(--mono); letter-spacing: 0.08em; }
+.rarity-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.stat-pill {
+  padding: 8px;
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.stat-pill b { display: block; font-size: 18px; }
+.stat-pill span { color: #9eae9c; font: 600 10px/1 var(--mono); }
 .tag {
-  display: inline-block; margin-top: 4px; padding: 2px 6px;
+  display: inline-block; margin-top: 6px; padding: 2px 6px;
   border: 1px solid var(--line);
   font: 600 10px/1 var(--mono);
   letter-spacing: 0.08em;
@@ -262,7 +324,7 @@ button { font-family: inherit; cursor: pointer; }
 .panel button:disabled { opacity: 0.4; cursor: not-allowed; }
 .close-x {
   position: absolute; top: 10px; right: 10px;
-  width: 32px; height: 32px; border: 0; background: transparent; color: var(--foam);
+  width: 36px; height: 36px; border: 0; background: transparent; color: var(--foam);
 }
 
 .touch { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
