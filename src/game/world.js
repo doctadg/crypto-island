@@ -28,13 +28,8 @@ export function resolveCollision(x, z, radius = 0.42) {
 const lambert = (color, extras = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...extras });
 
-function mesh(geo, color, shadows = true) {
-  const m = new THREE.Mesh(geo, typeof color === "number" ? lambert(color) : color);
-  if (shadows) {
-    m.castShadow = true;
-    m.receiveShadow = true;
-  }
-  return m;
+function mesh(geo, color) {
+  return new THREE.Mesh(geo, typeof color === "number" ? lambert(color) : color);
 }
 
 function n2(x, z) {
@@ -77,7 +72,7 @@ export function heightAt(x, z) {
 
 function islandMesh() {
   const g = new THREE.Group();
-  const segs = 72;
+  const segs = 48;
   const size = (ISLAND_R + 6) * 2;
   const geo = new THREE.PlaneGeometry(size, size, segs, segs);
   geo.rotateX(-Math.PI / 2);
@@ -114,8 +109,6 @@ function islandMesh() {
     geo,
     new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })
   );
-  land.receiveShadow = true;
-  land.castShadow = true;
   g.add(land);
 
   // shoreline rocks only — hang off the water, never form inland walls
@@ -772,11 +765,8 @@ export function createWorld(scene) {
   pathBoards(root);
 
   for (const [x, z] of [
-    [3.2, 18.4], [5.1, 14.2], [-4.4, 16.6], [2.2, 8.8], [-2.6, 11.4],
-    [7.8, 6.2], [-8.2, 9.4], [4.6, -2.2], [-1.8, -6.4], [9.2, -9.6],
-    [1.4, 20.2], [-5.6, 4.2], [11.2, 2.4], [-3.2, 19.5], [6.4, 12.8],
-    [13.4, -6.2], [-10.2, 3.4], [8.8, 16.2], [-7.4, -4.8], [16.2, 7.4],
-    [0.6, 14.6], [4.2, -11.4], [-12.6, 8.8], [19.4, 4.2], [-2.2, 22.4],
+    [3.2, 18.4], [5.1, 14.2], [-4.4, 16.6], [7.8, 6.2], [9.2, -9.6],
+    [13.4, -6.2], [16.2, 7.4], [-12.6, 8.8],
   ]) {
     place(root, grassTuft(), x, z);
   }

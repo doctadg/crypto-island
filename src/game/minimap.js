@@ -51,75 +51,53 @@ function worldToMap(x, z, w, h) {
 
 export function createMinimap(canvas) {
   const ctx = canvas.getContext("2d");
-  const dpr = Math.min(devicePixelRatio || 1, 1.5);
+  const dpr = 1;
   canvas.width = SIZE * dpr;
   canvas.height = SIZE * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const w = SIZE;
   const h = SIZE;
 
-  function paintBase() {
-    ctx.fillStyle = "#14384c";
-    ctx.fillRect(0, 0, w, h);
+  const bg = document.createElement("canvas");
+  bg.width = w;
+  bg.height = h;
+  const b = bg.getContext("2d");
+  b.fillStyle = "#14384c";
+  b.fillRect(0, 0, w, h);
+  const island = worldToMap(0, 0, w, h);
+  const ir = (ISLAND_R / (RANGE * 2)) * w;
+  b.beginPath();
+  b.arc(island.x, island.y, ir, 0, Math.PI * 2);
+  b.fillStyle = "#617044";
+  b.fill();
 
-    const island = worldToMap(0, 0, w, h);
-    const ir = (ISLAND_R / (RANGE * 2)) * w;
-    ctx.beginPath();
-    ctx.arc(island.x, island.y, ir, 0, Math.PI * 2);
-    ctx.fillStyle = "#617044";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(244,247,242,0.22)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    for (const zn of ZONES) {
-      const p = worldToMap(zn.x, zn.z, w, h);
-      const pr = (zn.r / (RANGE * 2)) * w;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, pr, 0, Math.PI * 2);
-      ctx.fillStyle = zn.fish ? FISH[zn.id] || "#7de39a" : LAND[zn.id] || "#9eae9c";
-      ctx.globalAlpha = zn.fish ? 0.42 : 0.28;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = zn.fish ? "rgba(244,247,242,0.35)" : "rgba(244,247,242,0.16)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
+  for (const zn of ZONES) {
+    const p = worldToMap(zn.x, zn.z, w, h);
+    const pr = (zn.r / (RANGE * 2)) * w;
+    b.beginPath();
+    b.arc(p.x, p.y, pr, 0, Math.PI * 2);
+    b.fillStyle = zn.fish ? FISH[zn.id] || "#7de39a" : LAND[zn.id] || "#9eae9c";
+    b.globalAlpha = zn.fish ? 0.42 : 0.28;
+    b.fill();
+    b.globalAlpha = 1;
   }
 
-  function draw(px, pz, yaw, zoneId) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  b.font = "700 8px ui-monospace, monospace";
+  b.textAlign = "center";
+  b.textBaseline = "middle";
+  for (const zn of ZONES) {
+    const p = worldToMap(zn.x, zn.z, w, h);
+    const off = LABEL_OFF[zn.id] || { x: 0, y: 0 };
+    const tx = p.x + off.x;
+    const ty = p.y + off.y;
+    b.fillStyle = "rgba(8,14,12,0.78)";
+    b.fillRect(tx - 16, ty - 6, 32, 12);
+    b.fillStyle = "#f4f7f2";
+    b.fillText(SHORT[zn.id] || zn.label, tx, ty);
+  }
+
+  function draw(px, pz, yaw) {
     ctx.clearRect(0, 0, w, h);
-    paintBase();
-
-    if (zoneId) {
-      const zn = ZONES.find((z) => z.id === zoneId);
-      if (zn) {
-        const p = worldToMap(zn.x, zn.z, w, h);
-        const pr = (zn.r / (RANGE * 2)) * w;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, pr + 2, 0, Math.PI * 2);
-        ctx.strokeStyle = "#f4f7f2";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-    }
-
-    ctx.font = "700 8px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    for (const zn of ZONES) {
-      const p = worldToMap(zn.x, zn.z, w, h);
-      const off = LABEL_OFF[zn.id] || { x: 0, y: 0 };
-      const tx = p.x + off.x;
-      const ty = p.y + off.y;
-      const label = SHORT[zn.id] || zn.label;
-      ctx.fillStyle = "rgba(8,14,12,0.78)";
-      ctx.fillRect(tx - 16, ty - 6, 32, 12);
-      ctx.fillStyle = zoneId === zn.id ? "#7de39a" : "#f4f7f2";
-      ctx.fillText(label, tx, ty);
-    }
-
+    ctx.drawImage(bg, 0, 0);
     const p = worldToMap(px, pz, w, h);
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -131,10 +109,7 @@ export function createMinimap(canvas) {
     ctx.lineTo(-5.5, 7);
     ctx.closePath();
     ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = "#16382a";
-    ctx.lineWidth = 1.5;
     ctx.fill();
-    ctx.stroke();
     ctx.restore();
   }
 

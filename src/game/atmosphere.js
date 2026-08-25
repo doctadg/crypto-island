@@ -5,7 +5,7 @@ export function createSky() {
   const g = new THREE.Group();
   g.name = "sky";
   const hemi = new THREE.Mesh(
-    new THREE.SphereGeometry(280, 24, 16),
+    new THREE.SphereGeometry(280, 12, 8),
     new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
@@ -50,15 +50,15 @@ export function createSky() {
   haze.position.copy(sun.position);
   g.add(haze);
 
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 4; i++) {
     const cloud = new THREE.Group();
-    const mat = new THREE.MeshLambertMaterial({ color: 0xeef4f8, flatShading: true, transparent: true, opacity: 0.78 });
-    for (let k = 0; k < 4; k++) {
-      const p = new THREE.Mesh(new THREE.SphereGeometry(4.2 + (k % 3), 6, 5), mat);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.7 });
+    for (let k = 0; k < 3; k++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(4.2 + (k % 3), 5, 4), mat);
       p.position.set((k - 1.4) * 5.2, (k % 2) * 1.4, (k % 3) - 1);
       cloud.add(p);
     }
-    const a = (i / 9) * Math.PI * 2;
+    const a = (i / 4) * Math.PI * 2;
     cloud.position.set(Math.cos(a) * 90, 28 + (i % 3) * 4, Math.sin(a) * 90);
     cloud.userData.spin = 0.012 + (i % 4) * 0.004;
     cloud.userData.base = a;
@@ -88,7 +88,7 @@ export function waterHeight(x, z, t) {
 }
 
 export function createWater() {
-  const geo = new THREE.PlaneGeometry(620, 620, 56, 56);
+  const geo = new THREE.PlaneGeometry(620, 620, 24, 24);
   geo.rotateX(-Math.PI / 2);
   const mat = new THREE.ShaderMaterial({
     transparent: true,
@@ -128,26 +128,17 @@ export function createWater() {
       varying float vH;
       varying float vMix;
       void main() {
-        if (vMix < 0.04) discard;
-        float r = length(vW.xz);
         float shore = 1.0 - vMix;
-        vec3 col = mix(uDeep, uMid, smoothstep(0.0, 0.14, vH));
+        vec3 col = mix(uDeep, uMid, clamp(vH * 4.0, 0.0, 1.0));
         col = mix(col, uShal, shore);
-        float crest = smoothstep(0.12, 0.28, vH) * vMix;
-        col = mix(col, uFoam, crest * 0.5);
-        float foam = sin(r * 0.72 - uTime * 2.0) * 0.5 + 0.5;
-        foam *= smoothstep(0.15, 0.55, vMix) * smoothstep(1.0, 0.45, vMix);
-        col = mix(col, uFoam, foam * 0.55);
-        float spark = pow(max(0.0, sin(vW.x * 0.85 + vW.z * 0.55 + uTime * 3.2)), 22.0) * vMix;
-        col += spark * 0.14;
-        float alpha = mix(0.0, 0.9, smoothstep(0.04, 0.28, vMix));
+        col = mix(col, uFoam, step(0.16, vH) * vMix * 0.35);
+        float alpha = mix(0.0, 0.88, smoothstep(0.02, 0.22, vMix));
         gl_FragColor = vec4(col, alpha);
       }
     `,
   });
   const water = new THREE.Mesh(geo, mat);
   water.position.y = 0.0;
-  water.receiveShadow = true;
   water.name = "water";
   return water;
 }

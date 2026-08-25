@@ -5,7 +5,7 @@ import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game
 import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, tradeLine } from "./game/economy.js";
 import { iconRod, iconSwap, iconMerch, iconFish, iconStat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
-import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
+import { createSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
 import { createMinimap } from "./game/minimap.js";
 
 const canvas = document.getElementById("game");
@@ -61,14 +61,18 @@ const lookSmoothed = { x: 0, y: 0 };
 const mobile = matchMedia("(pointer: coarse)").matches;
 const stick = { active: false, x: 0, y: 0, id: null };
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: false,
+  powerPreference: "high-performance",
+  stencil: false,
+  depth: true,
+});
+renderer.setPixelRatio(1);
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.shadowMap.enabled = false;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMapping = THREE.NoToneMapping;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(C.sky);
@@ -78,16 +82,10 @@ const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 4
 camera.rotation.order = "YXZ";
 camera.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
 
-const hemi = new THREE.HemisphereLight(0xc5dceb, 0x6a6550, 1.05);
+const hemi = new THREE.HemisphereLight(0xc5dceb, 0x6a6550, 1.2);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff3d6, 1.05);
+const sun = new THREE.DirectionalLight(0xfff3d6, 0.85);
 sun.position.set(-48, 62, 22);
-sun.castShadow = true;
-sun.shadow.mapSize.set(512, 512);
-sun.shadow.camera.left = -50;
-sun.shadow.camera.right = 50;
-sun.shadow.camera.top = 50;
-sun.shadow.camera.bottom = -50;
 scene.add(sun);
 
 const world = createWorld(scene);
@@ -549,6 +547,10 @@ function eyeHeight() {
   return crouch ? 1.05 : 1.62;
 }
 
+function setText(el, value) {
+  if (el && el.textContent !== value) el.textContent = value;
+}
+
 function updatePrompt() {
   const p = camera.position;
   lastInteract = null;
@@ -562,36 +564,33 @@ function updatePrompt() {
   }
   const zone = zoneAt(p.x, p.z);
   const hint = zone.hint || (zone.fish ? "Fish here" : "Explore");
-  zoneEl.textContent = zone.label;
-  if (zoneHintEl) zoneHintEl.textContent = hint;
-  if (areaNowEl) areaNowEl.textContent = zone.label;
-  if (areaNowHintEl) areaNowHintEl.textContent = hint;
+  setText(zoneEl, zone.label);
+  setText(zoneHintEl, hint);
+  setText(areaNowEl, zone.label);
+  setText(areaNowHintEl, hint);
   if (zone.id !== lastZoneId) {
     lastZoneId = zone.id;
     if (playing && areaEnterEl) {
-      areaEnterEl.textContent = `ENTERING  ${zone.label}`;
+      setText(areaEnterEl, `ENTERING  ${zone.label}`);
       areaEnterEl.classList.remove("hidden");
       areaEnterTimer = 2.4;
     }
   }
-  if (panelOpen) {
-    promptEl.textContent = "";
-    return;
+  let next = "";
+  if (!panelOpen) {
+    if (fishing) next = fishing.phase === "cast" ? "F to Cast" : "F to Reel";
+    else if (lastInteract) next = lastInteract.label;
+    else if (lookingAtWater().ok && econ.state.equipped !== "none") next = "F to Cast";
   }
-  if (fishing) {
-    if (fishing.phase === "cast") promptEl.textContent = "F to Cast";
-    else promptEl.textContent = "F to Reel";
-    return;
-  }
-  if (lastInteract) promptEl.textContent = lastInteract.label;
-  else if (lookingAtWater().ok && econ.state.equipped !== "none") promptEl.textContent = "F to Cast";
-  else promptEl.textContent = "";
+  setText(promptEl, next);
 }
 
 function applyLook(dx, dy) {
   look.x -= dx * 0.00225;
   look.y -= dy * 0.00225;
   look.y = Math.max(-1.2, Math.min(1.2, look.y));
+  camera.rotation.y = look.x;
+  camera.rotation.x = look.y;
 }
 
 function stepPlayer(dt) {
@@ -848,18 +847,34 @@ bindStick();
 paintHud();
 
 let last = performance.now();
+let hudAcc = 0;
+let mapAcc = 0;
+let npcAcc = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (playing) {
     stepPlayer(dt);
     tickFishing(dt);
-    updatePrompt();
-    if (minimap) minimap.draw(camera.position.x, camera.position.z, look.x, lastZoneId);
+    hudAcc += dt;
+    mapAcc += dt;
+    if (hudAcc > 0.08) {
+      hudAcc = 0;
+      updatePrompt();
+    }
+    if (minimap && mapAcc > 0.05) {
+      mapAcc = 0;
+      minimap.draw(camera.position.x, camera.position.z, look.x);
+    }
   }
-  if ((now / 80 | 0) % 2 === 0) {
+  npcAcc += dt;
+  if (npcAcc > 0.12) {
+    npcAcc = 0;
+    const t = now / 1000;
     for (const p of world.people) {
-      animateCharacter(p, now / 1000, false, p.userData.archetype === "FISHERMAN");
+      const dx = p.position.x - camera.position.x;
+      const dz = p.position.z - camera.position.z;
+      if (dx * dx + dz * dz < 900) animateCharacter(p, t, false, p.userData.archetype === "FISHERMAN");
     }
   }
   if (world.birds) {
@@ -870,22 +885,19 @@ function frame(now) {
         b.userData.h + Math.sin(now / 700 + b.userData.orbit) * 0.4,
         Math.sin(b.userData.orbit) * b.userData.rad
       );
-      b.lookAt(0, b.position.y, 0);
-      const flap = Math.sin(now / 140 + b.userData.orbit) * 0.45;
       if (b.userData.wings) {
+        const flap = Math.sin(now / 140 + b.userData.orbit) * 0.45;
         b.userData.wings[0].rotation.z = flap;
         b.userData.wings[1].rotation.z = -flap;
       }
     }
   }
-  tickSky(sky, now / 1000);
   tickSplash(splash, dt);
   const tSec = now / 1000;
   if (world.ocean?.material?.uniforms?.uTime) world.ocean.material.uniforms.uTime.value = tSec;
   if (world.duck) {
     world.duck.position.y = waterHeight(world.duck.position.x, world.duck.position.z, tSec) + 0.1;
     world.duck.rotation.z = Math.sin(tSec * 1.7) * 0.2;
-    world.duck.rotation.y += dt * 0.15;
   }
   if (catchProp.visible) {
     catchProp.rotation.y += dt * 1.6;

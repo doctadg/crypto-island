@@ -8,29 +8,24 @@ const mat = (color, extras = {}) =>
 function box(w, h, d, color, y = 0) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
   m.position.y = y;
-  m.castShadow = true;
-  m.receiveShadow = true;
   return m;
 }
 
-function cyl(rTop, rBot, h, color, y = 0, seg = 7) {
+function cyl(rTop, rBot, h, color, y = 0, seg = 6) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), mat(color));
   m.position.y = y;
-  m.castShadow = true;
   return m;
 }
 
-function sphere(r, color, y = 0, seg = 8) {
+function sphere(r, color, y = 0, seg = 6) {
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, seg), mat(color));
   m.position.y = y;
-  m.castShadow = true;
   return m;
 }
 
 function capsule(r, len, color, y = 0) {
-  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 3, 7), mat(color));
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 2, 6), mat(color));
   m.position.y = y;
-  m.castShadow = true;
   return m;
 }
 
