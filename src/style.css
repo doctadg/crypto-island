@@ -131,6 +131,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hud-top { top: 14px; }
 .hud-bottom { bottom: 14px; }
+.minimap-wrap {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 188px;
+  pointer-events: none;
+  z-index: 9;
+}
 .brand-lock { display: flex; align-items: center; gap: 10px; }
 .pill-mark {
   width: 40px; height: 40px; object-fit: contain;
@@ -262,6 +270,37 @@ button { font-family: inherit; cursor: pointer; }
   letter-spacing: 0.14em;
   color: var(--warn);
 }
+.minimap-wrap {
+  width: 188px;
+}
+#minimap {
+  width: 188px;
+  height: 188px;
+  display: block;
+  border: 1px solid rgba(125,227,154,0.45);
+  background: #16382a;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+}
+.minimap-key {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: rgba(8,14,12,0.82);
+  border: 1px solid rgba(244,247,242,0.12);
+  font: 600 9px/1.4 var(--mono);
+  letter-spacing: 0.06em;
+}
+.minimap-key b { display: block; margin-bottom: 3px; color: #f4f7f2; }
+.minimap-key span { display: inline-block; margin-right: 8px; color: #c9d4c6; }
+.k-dock::before, .k-beach::before, .k-cave::before, .k-off::before {
+  content: "";
+  display: inline-block;
+  width: 7px; height: 7px; margin-right: 4px;
+  vertical-align: -1px;
+}
+.k-dock::before { background: #6ed18a; }
+.k-beach::before { background: #e8c15a; }
+.k-cave::before { background: #8a7ad4; }
+.k-off::before { background: #4e96bc; }
 
 .toast {
   position: fixed; left: 50%; top: 86px; transform: translateX(-50%);

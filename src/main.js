@@ -6,6 +6,7 @@ import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, tradeLine } fro
 import { iconRod, iconSwap, iconMerch, iconFish, iconStat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
 import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
+import { createMinimap } from "./game/minimap.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -60,11 +61,11 @@ const lookSmoothed = { x: 0, y: 0 };
 const mobile = matchMedia("(pointer: coarse)").matches;
 const stick = { active: false, x: 0, y: 0, id: null };
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.12;
@@ -82,7 +83,7 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff3d6, 1.05);
 sun.position.set(-48, 62, 22);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.mapSize.set(512, 512);
 sun.shadow.camera.left = -50;
 sun.shadow.camera.right = 50;
 sun.shadow.camera.top = 50;
@@ -100,6 +101,8 @@ const catchProp = createCatchProp();
 camera.add(catchProp);
 catchProp.position.set(0.18, -0.12, -0.42);
 refreshArms();
+const mapCanvas = document.getElementById("minimap");
+const minimap = mapCanvas ? createMinimap(mapCanvas) : null;
 
 const fill = new THREE.DirectionalLight(0xb7d4e8, 0.28);
 fill.position.set(30, 18, -40);
@@ -454,7 +457,7 @@ function beginCast() {
     bz: aim.z,
   };
   sfx.cast();
-  setCastUI("cast", "THROWING LINE", 12);
+  setCastUI("cast", "F to Cast", 12);
 }
 
 function placeBobber(t) {
@@ -481,26 +484,26 @@ function tickFishing(dt) {
   poseFishingArms(arms, fishing.phase, fishing.t);
   placeBobber(performance.now() / 1000);
   if (fishing.phase === "cast") {
-    setCastUI("cast", "THROWING LINE", (fishing.t / 0.42) * 100);
+    setCastUI("cast", "F to Cast", (fishing.t / 0.42) * 100);
     if (fishing.t >= 0.42) {
       fishing.phase = "wait";
       fishing.t = 0;
       burstSplash(splash, fishing.bx, 0.12, fishing.bz);
       sfx.splash();
-      setCastUI("wait", "WAITING FOR A BITE", 0);
+      setCastUI("wait", "F to Reel · waiting", 0);
     }
   } else if (fishing.phase === "wait") {
-    setCastUI("wait", "WAITING FOR A BITE", (fishing.t / fishing.biteAt) * 100);
+    setCastUI("wait", "F to Reel · waiting", (fishing.t / fishing.biteAt) * 100);
     if (fishing.t >= fishing.biteAt) {
       fishing.phase = "bite";
       fishing.t = 0;
       burstSplash(splash, fishing.bx, 0.12, fishing.bz);
       sfx.bite();
-      setCastUI("bite", "BITE · CLICK / F", 100);
-      toast("Bite! Reel now.");
+      setCastUI("bite", "F to Reel", 100);
+      toast("F to Reel");
     }
   } else if (fishing.phase === "bite") {
-    setCastUI("bite", "BITE · CLICK / F", (1 - fishing.t / fishing.window) * 100);
+    setCastUI("bite", "F to Reel", (1 - fishing.t / fishing.window) * 100);
     if (fishing.t > fishing.window) {
       fishing = null;
       bobber.visible = false;
@@ -510,7 +513,7 @@ function tickFishing(dt) {
       toast("It got away.");
     }
   } else if (fishing.phase === "reel") {
-    setCastUI("reel", "REELING", (fishing.t / 0.55) * 100);
+    setCastUI("reel", "F to Reel", (fishing.t / 0.55) * 100);
     if (fishing.t >= 0.55) {
       const zone = fishing.zone;
       fishing = null;
@@ -538,7 +541,7 @@ function reel() {
     fishing.phase = "reel";
     fishing.t = 0;
     sfx.reel();
-    setCastUI("reel", "REELING", 0);
+    setCastUI("reel", "F to Reel", 0);
   }
 }
 
@@ -573,6 +576,11 @@ function updatePrompt() {
   }
   if (panelOpen) {
     promptEl.textContent = "";
+    return;
+  }
+  if (fishing) {
+    if (fishing.phase === "cast") promptEl.textContent = "F to Cast";
+    else promptEl.textContent = "F to Reel";
     return;
   }
   if (lastInteract) promptEl.textContent = lastInteract.label;
@@ -847,9 +855,12 @@ function frame(now) {
     stepPlayer(dt);
     tickFishing(dt);
     updatePrompt();
+    if (minimap) minimap.draw(camera.position.x, camera.position.z, look.x, lastZoneId);
   }
-  for (const p of world.people) {
-    animateCharacter(p, now / 1000, false, p.userData.archetype === "FISHERMAN");
+  if ((now / 80 | 0) % 2 === 0) {
+    for (const p of world.people) {
+      animateCharacter(p, now / 1000, false, p.userData.archetype === "FISHERMAN");
+    }
   }
   if (world.birds) {
     for (const b of world.birds) {

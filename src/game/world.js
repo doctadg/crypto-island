@@ -77,7 +77,7 @@ export function heightAt(x, z) {
 
 function islandMesh() {
   const g = new THREE.Group();
-  const segs = 140;
+  const segs = 72;
   const size = (ISLAND_R + 6) * 2;
   const geo = new THREE.PlaneGeometry(size, size, segs, segs);
   geo.rotateX(-Math.PI / 2);

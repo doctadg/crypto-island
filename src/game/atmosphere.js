@@ -88,7 +88,7 @@ export function waterHeight(x, z, t) {
 }
 
 export function createWater() {
-  const geo = new THREE.PlaneGeometry(620, 620, 128, 128);
+  const geo = new THREE.PlaneGeometry(620, 620, 56, 56);
   geo.rotateX(-Math.PI / 2);
   const mat = new THREE.ShaderMaterial({
     transparent: true,
