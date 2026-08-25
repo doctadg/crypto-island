@@ -481,12 +481,9 @@ export function createWorld(scene) {
   tR.position.set(1.4, 1.0, 8);
   root.add(tL, tR);
 
-  const path = mesh(new THREE.BoxGeometry(1.35, 0.05, 15.2), 0xb39a68);
-  path.position.set(0.15, 1.01, 10.4);
-  root.add(path);
-  for (let i = 0; i < 8; i++) {
-    const plank = mesh(new THREE.BoxGeometry(1.5, 0.04, 1.35), i % 2 ? 0xa88858 : 0x9a7a4c);
-    plank.position.set(0.15, 1.03, 4.2 + i * 1.55);
+  for (let i = 0; i < 9; i++) {
+    const plank = mesh(new THREE.BoxGeometry(1.55, 0.08, 1.4), i % 2 ? 0xc4a56a : 0xb48d55);
+    plank.position.set(0.1, 1.14, 3.6 + i * 1.55);
     root.add(plank);
   }
 
