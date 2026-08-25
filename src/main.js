@@ -16,7 +16,11 @@ const loadLine = document.getElementById("load-line");
 const promptEl = document.getElementById("prompt");
 const zoneEl = document.getElementById("zone-label");
 const zoneHintEl = document.getElementById("zone-hint");
+const areaNowEl = document.getElementById("area-now-label");
+const areaNowHintEl = document.getElementById("area-now-hint");
+const areaEnterEl = document.getElementById("area-enter");
 let lastZoneId = "";
+let areaEnterTimer = 0;
 const tokenEl = document.getElementById("token-bal");
 const creditEl = document.getElementById("credit-bal");
 const catchEl = document.getElementById("catch-count");
@@ -554,18 +558,25 @@ function updatePrompt() {
     }
   }
   const zone = zoneAt(p.x, p.z);
+  const hint = zone.hint || (zone.fish ? "Fish here" : "Explore");
   zoneEl.textContent = zone.label;
-  if (zoneHintEl) zoneHintEl.textContent = zone.hint || (zone.fish ? "Fish here" : "Explore");
+  if (zoneHintEl) zoneHintEl.textContent = hint;
+  if (areaNowEl) areaNowEl.textContent = zone.label;
+  if (areaNowHintEl) areaNowHintEl.textContent = hint;
   if (zone.id !== lastZoneId) {
     lastZoneId = zone.id;
-    if (playing) toast(zone.label);
+    if (playing && areaEnterEl) {
+      areaEnterEl.textContent = `ENTERING  ${zone.label}`;
+      areaEnterEl.classList.remove("hidden");
+      areaEnterTimer = 2.4;
+    }
   }
   if (panelOpen) {
     promptEl.textContent = "";
     return;
   }
   if (lastInteract) promptEl.textContent = lastInteract.label;
-  else if (lookingAtWater().ok && econ.state.equipped !== "none") promptEl.textContent = "Cast";
+  else if (lookingAtWater().ok && econ.state.equipped !== "none") promptEl.textContent = "F to Cast";
   else promptEl.textContent = "";
 }
 
@@ -872,6 +883,10 @@ function frame(now) {
   if (toastTimer > 0) {
     toastTimer -= dt;
     if (toastTimer <= 0) toastEl.classList.add("hidden");
+  }
+  if (areaEnterTimer > 0) {
+    areaEnterTimer -= dt;
+    if (areaEnterTimer <= 0) areaEnterEl?.classList.add("hidden");
   }
   if (catchTimer > 0) {
     catchTimer -= dt;
