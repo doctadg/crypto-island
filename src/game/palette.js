@@ -30,5 +30,6 @@ export const C = {
 };
 
 export const ISLAND_R = 42;
+export const ISLAND2 = { x: 118, z: -8, r: 28 };
 export const WATER_Y = 0;
 export const SPAWN = { x: 1.6, y: 2.1, z: 36.2 };

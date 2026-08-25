@@ -1,9 +1,9 @@
-import { ISLAND_R } from "./palette.js";
+import { ISLAND_R, ISLAND2 } from "./palette.js";
 import { heightAt } from "./world.js";
 
-const RANGE = 48;
+const RANGE = 160;
 const SIZE = 212;
-const N = 96;
+const N = 80;
 
 function worldToMap(x, z, w, h) {
   return {
@@ -35,11 +35,16 @@ export function createMinimap(canvas) {
       const z = RANGE - ((j + 0.5) / N) * RANGE * 2;
       const y = heightAt(x, z);
       const r = Math.hypot(x, z);
+      const r2 = Math.hypot(x - ISLAND2.x, z - ISLAND2.z);
       let cr;
       let cg;
       let cb;
-      if (y < 0.08 || r > ISLAND_R + 3.4) {
-        const deep = Math.min(1, Math.max(0, (r - ISLAND_R) / 18));
+      if (r2 < ISLAND2.r + 2 && y > 0.08) {
+        if (y < 0.3) { cr = 201; cg = 160; cb = 106; }
+        else if (Math.hypot(x - ISLAND2.x + 2, z - ISLAND2.z - 1) < 6) { cr = 196; cg = 74; cb = 58; }
+        else { cr = 106; cg = 83; cb = 68; }
+      } else if (y < 0.08 || r > ISLAND_R + 3.4) {
+        const deep = Math.min(1, Math.max(0, Math.min(r, r2) / 40));
         cr = 28 + deep * 8;
         cg = 88 - deep * 18;
         cb = 118 - deep * 10;
@@ -148,17 +153,20 @@ export function createMinimap(canvas) {
     c.ellipse(0, 0, 3.4, 1.6, 0.45, 0, Math.PI * 2);
     c.fill();
   });
+  const a = worldToMap(-31, 5.6, w, h);
+  const b2 = worldToMap(ISLAND2.x - 6, ISLAND2.z + 22, w, h);
+  b.strokeStyle = "rgba(244,247,242,0.35)";
+  b.setLineDash([4, 4]);
+  b.beginPath();
+  b.moveTo(a.x, a.y);
+  b.lineTo(b2.x, b2.y);
+  b.stroke();
+  b.setLineDash([]);
 
   const labels = [
-    { t: "DOCK", x: 8.4, z: 36.6, fill: "#f4f7f2" },
-    { t: "BEACH", x: 30, z: 10, fill: "#fff4c8" },
-    { t: "CAVE", x: 20.4, z: 18.6, fill: "#e6e0ff" },
-    { t: "CLIFF", x: -20, z: 20, fill: "#f0e0c0" },
-    { t: "NORTH", x: -28, z: 12, fill: "#d8f4ff" },
-    { t: "OFF", x: -36, z: 1, fill: "#d8f4ff" },
-    { t: "WOODS", x: 12, z: -16, fill: "#e8f4c8" },
-    { t: "TOWER", x: 0, z: -7.2, fill: "#ffffff" },
-    { t: "HUTS", x: 7, z: 21, fill: "#ffe6a0" },
+    { t: "HOME", x: 0, z: 8, fill: "#f4f7f2" },
+    { t: "DOCK", x: 8, z: 36, fill: "#f4f7f2" },
+    { t: "EMBER", x: ISLAND2.x, z: ISLAND2.z, fill: "#ffd0c0" },
   ];
   b.font = "700 9px ui-monospace, SFMono-Regular, Menlo, monospace";
   b.textAlign = "center";

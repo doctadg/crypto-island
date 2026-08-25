@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { C, SPAWN } from "./game/palette.js";
 import { createWorld, heightAt, zoneAt, INTERACTS, resolveCollision } from "./game/world.js";
 import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game/characters.js";
-import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, tradeLine } from "./game/economy.js";
-import { iconRod, iconSwap, iconMerch, iconFish, iconStat } from "./game/icons.js";
+import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, SHOP_GEAR, tradeLine } from "./game/economy.js";
+import { iconRod, iconSwap, iconMerch, iconFish, iconStat, iconBoat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
 import { createSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
 import { createMinimap } from "./game/minimap.js";
@@ -47,6 +47,9 @@ let pointerLocked = false;
 let crouch = false;
 let panelOpen = null;
 let fishing = null;
+let sailing = null;
+const HOME_BOAT = { x: -31, z: 5.6 };
+const EMBER_BOAT = { x: 112, z: 14 };
 let toastTimer = 0;
 let catchTimer = 0;
 let arms = null;
@@ -78,7 +81,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(C.sky);
 scene.fog = new THREE.FogExp2(C.sky, 0.011);
 
-const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 400);
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 520);
 camera.rotation.order = "YXZ";
 camera.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
 
@@ -200,6 +203,18 @@ function renderShop() {
       <button class="primary" type="button" data-act="swap" data-id="${o.id}">SWAP</button>
     </article>`
   ).join("");
+  const gear = SHOP_GEAR.map((o) => {
+    const owned = o.id === "skiff" && econ.state.boat;
+    return `<article class="card">
+      <div class="art">${iconBoat()}</div>
+      <div class="copy">
+        <b>${o.name}</b>
+        <span>${o.note}</span>
+        <i class="tag">${o.cost} CREDITS</i>
+      </div>
+      ${owned ? `<em class="kept">OWNED</em>` : `<button class="primary" type="button" data-act="gear" data-id="${o.id}">BUY</button>`}
+    </article>`;
+  }).join("");
   const merch = SHOP_MERCH.map(
     (o) => `<article class="card">
       <div class="art">${iconMerch(o.id)}</div>
@@ -225,10 +240,12 @@ function renderShop() {
     </div>
     <div class="tabs">
       <button type="button" data-act="tab" data-id="rods" class="${tab === "rods" ? "on" : ""}">RODS</button>
+      <button type="button" data-act="tab" data-id="gear" class="${tab === "gear" ? "on" : ""}">GEAR</button>
       <button type="button" data-act="tab" data-id="swap" class="${tab === "swap" ? "on" : ""}">SWAPS</button>
       <button type="button" data-act="tab" data-id="merch" class="${tab === "merch" ? "on" : ""}">MERCH</button>
     </div>
     ${tab === "rods" ? `${walletChip()}<div class="cards">${rods}</div><p class="sub">Burned ${econ.state.burned} TOKEN · preview only</p>` : ""}
+    ${tab === "gear" ? `<div class="cards">${gear}</div><p class="sub">Buy the skiff, then E on the north dock boat. Local preview. Not a live fleet.</p>` : ""}
     ${tab === "swap" ? `<div class="cards">${swaps}</div><p class="sub">Credits → TOKEN or preview SOL. No chain.</p>` : ""}
     ${tab === "merch" ? `<div class="cards">${merch}</div>${locker}<p class="sub">Preview locker. Nothing ships.</p>` : ""}
   `;
@@ -275,7 +292,7 @@ function renderBoard() {
     <button class="close-x" type="button" data-act="close">✕</button>
     <p class="mini">JOURNAL</p>
     <h2>Island log</h2>
-    <p class="sub">This browser only. Not a live network.</p>
+    <p class="sub">Local preview. Room for a crowd — not a live 50-player server.</p>
     <div class="stat-grid">
       <div class="stat-card">${iconStat("fish")}<b>${econ.state.caught}</b><span>Landed</span></div>
       <div class="stat-card">${iconStat("burn")}<b>${econ.state.burned}</b><span>Burned</span></div>
@@ -353,6 +370,16 @@ panel.addEventListener("click", (e) => {
     paintHud();
     renderShop();
   }
+  if (act === "gear") {
+    const res = econ.buyGear(btn.dataset.id);
+    if (!res.ok) toast(res.reason);
+    else {
+      sfx.ui();
+      toast("Island Skiff owned. E the north dock boat to sail.");
+    }
+    paintHud();
+    renderShop();
+  }
 });
 
 function tryInteract() {
@@ -365,8 +392,15 @@ function tryInteract() {
   if (lastInteract.id === "board") openPanel("board");
   if (lastInteract.id === "redeem") openPanel("redeem");
   if (lastInteract.id === "boat") {
-    camera.position.set(-28, 1.4, 4.2);
-    toast("Skiff ride · offshore water is live.");
+    if (!econ.state.boat) {
+      toast("Buy the Island Skiff in Shop · GEAR first.");
+      return;
+    }
+    startSail(EMBER_BOAT, "Ember Atoll");
+    return;
+  }
+  if (lastInteract.id === "emberdock") {
+    startSail(HOME_BOAT, "Pump Island");
     return;
   }
   if (lastInteract.id === "boot") toast("Size 400. Someone lost the other one.");
@@ -425,7 +459,7 @@ function showCatch(item) {
 }
 
 function beginCast() {
-  if (fishing || panelOpen || !playing) return;
+  if (fishing || panelOpen || !playing || sailing) return;
   if (catchCard && !catchCard.classList.contains("hidden")) return;
   const aim = lookingAtWater();
   if (!aim.ok) {
@@ -576,6 +610,10 @@ function updatePrompt() {
       areaEnterTimer = 2.4;
     }
   }
+  if (sailing) {
+    setText(promptEl, "Sailing…");
+    return;
+  }
   let next = "";
   if (!panelOpen) {
     if (fishing) next = fishing.phase === "cast" ? "F to Cast" : "F to Reel";
@@ -593,7 +631,42 @@ function applyLook(dx, dy) {
   camera.rotation.x = look.y;
 }
 
+function startSail(dest, label) {
+  if (sailing || fishing) return;
+  sailing = {
+    t: 0,
+    dur: 7.2,
+    fromX: camera.position.x,
+    fromZ: camera.position.z,
+    toX: dest.x,
+    toZ: dest.z,
+    label,
+  };
+  look.x = Math.atan2(dest.x - camera.position.x, -(dest.z - camera.position.z));
+  camera.rotation.y = look.x;
+  toast(`Sailing to ${label}`);
+}
+
+function stepSail(dt) {
+  sailing.t += dt;
+  const k = Math.min(1, sailing.t / sailing.dur);
+  const e = k * k * (3 - 2 * k);
+  camera.position.x = sailing.fromX + (sailing.toX - sailing.fromX) * e;
+  camera.position.z = sailing.fromZ + (sailing.toZ - sailing.fromZ) * e;
+  const tSec = performance.now() / 1000;
+  camera.position.y = waterHeight(camera.position.x, camera.position.z, tSec) + 1.42;
+  if (k >= 1) {
+    const name = sailing.label;
+    sailing = null;
+    toast(`Landed · ${name}`);
+  }
+}
+
 function stepPlayer(dt) {
+  if (sailing) {
+    stepSail(dt);
+    return;
+  }
   const tSec = performance.now() / 1000;
   const landY = heightAt(camera.position.x, camera.position.z);
   const waveY = waterHeight(camera.position.x, camera.position.z, tSec);

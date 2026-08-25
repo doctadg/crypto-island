@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { C, ISLAND_R } from "./palette.js";
+import { C, ISLAND_R, ISLAND2 } from "./palette.js";
 import { createCharacter } from "./characters.js";
 import { createWater } from "./atmosphere.js";
 import { createPillMesh } from "./pill.js";
@@ -36,7 +36,28 @@ function n2(x, z) {
   return Math.sin(x * 0.21) * Math.cos(z * 0.17) + Math.sin(x * 0.09 + z * 0.13) * 0.6;
 }
 
+function emberHeight(x, z) {
+  const lx = x - ISLAND2.x;
+  const lz = z - ISLAND2.z;
+  const r = Math.hypot(lx, lz);
+  if (r > ISLAND2.r + 6) return -0.55;
+  if (r > ISLAND2.r + 1.2) return -0.35;
+  if (r > ISLAND2.r - 2.4) {
+    const t = (ISLAND2.r + 1.2 - r) / 3.6;
+    return -0.05 + t * t * (3 - 2 * t) * 0.7;
+  }
+  const crater = Math.hypot(lx + 2, lz - 1);
+  let h = 0.55 + (1 - r / (ISLAND2.r - 2)) * 2.4;
+  h += Math.sin(lx * 0.31) * Math.cos(lz * 0.27) * 0.22;
+  if (crater < 7) h = Math.min(h, 0.42 + crater * 0.08);
+  if (lx > 4 && lz > -6 && lz < 8) h = Math.min(h, 0.38);
+  return Math.max(0.18, h);
+}
+
 export function heightAt(x, z) {
+  const r2 = Math.hypot(x - ISLAND2.x, z - ISLAND2.z);
+  if (r2 < ISLAND2.r + 8) return emberHeight(x, z);
+
   const r = Math.hypot(x, z);
   if (r > ISLAND_R + 10) return -0.55;
 
@@ -126,6 +147,43 @@ function islandMesh() {
     slab.rotation.y = a + 0.2;
     g.add(slab);
   }
+  return g;
+}
+
+function emberMesh() {
+  const g = new THREE.Group();
+  const segs = 36;
+  const size = (ISLAND2.r + 6) * 2;
+  const geo = new THREE.PlaneGeometry(size, size, segs, segs);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  const colors = [];
+  const cAsh = new THREE.Color(0x6a5344);
+  const cLava = new THREE.Color(0xc44a3a);
+  const cSand = new THREE.Color(0xc9a06a);
+  const cRock = new THREE.Color(C.rockDark);
+  const tmp = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const lx = pos.getX(i);
+    const lz = pos.getZ(i);
+    const x = lx + ISLAND2.x;
+    const z = lz + ISLAND2.z;
+    const r = Math.hypot(lx, lz);
+    let y = heightAt(x, z);
+    if (r > ISLAND2.r + 3) y = -0.5;
+    pos.setY(i, y);
+    if (r > ISLAND2.r + 1.6) tmp.set(C.oceanDeep);
+    else if (y < 0.28) tmp.copy(cSand);
+    else if (Math.hypot(lx + 2, lz - 1) < 6.2) tmp.copy(cLava);
+    else if (y > 2.2) tmp.copy(cRock);
+    else tmp.copy(cAsh);
+    colors.push(tmp.r, tmp.g, tmp.b);
+  }
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  const land = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  land.position.set(ISLAND2.x, 0, ISLAND2.z);
+  g.add(land);
   return g;
 }
 
@@ -632,6 +690,9 @@ export const ZONES = [
   { id: "FOREST", label: "PINE WOODS", hint: "No fishing", x: 10, z: -14, r: 10, fish: false },
   { id: "LIGHTHOUSE", label: "LIGHTHOUSE", hint: "Shop + burns", x: 0, z: -1, r: 8, fish: false },
   { id: "VILLAGE", label: "HUT ROW", hint: "Redeem counter", x: 6, z: 22, r: 6, fish: false },
+  { id: "EMBER_SHORE", label: "EMBER SHORE", hint: "Second island shallows", x: 118, z: 16, r: 12, fish: true },
+  { id: "EMBER_POOL", label: "EMBER POOL", hint: "Need Offshore Rod", x: 116, z: -8, r: 9, fish: true },
+  { id: "EMBER_HILL", label: "EMBER HILL", hint: "Ash ridge", x: 118, z: -8, r: 10, fish: false },
 ];
 
 export function zoneAt(x, z) {
@@ -659,6 +720,7 @@ export function createWorld(scene) {
   root.add(deep);
 
   root.add(islandMesh());
+  root.add(emberMesh());
 
   const light = lighthouse();
   const peak = heightAt(0, -1.2);
@@ -815,6 +877,16 @@ export function createWorld(scene) {
   paperSign.lookAt(0, 2, 0);
   root.add(paperSign);
 
+  const emberDock = dock(7.2, 1.7);
+  emberDock.position.set(ISLAND2.x - 6, 0.14, ISLAND2.z + 22);
+  emberDock.rotation.y = 0.2;
+  root.add(emberDock);
+  place(root, hut(0xc44a3a), ISLAND2.x - 4, ISLAND2.z + 14, 0.2, 0, 1.7);
+  place(root, hut(C.woodDark), ISLAND2.x + 6, ISLAND2.z + 8, -0.4, 0, 1.7);
+  place(root, signPost("EMBER ATOLL"), ISLAND2.x - 2, ISLAND2.z + 20, 0.3, 0, 0.4);
+  place(root, boulder(), ISLAND2.x + 8, ISLAND2.z - 4, 0.4, 0, 0.7);
+  place(root, boulder(), ISLAND2.x - 10, ISLAND2.z - 6, -0.2, 0, 0.7);
+
   const birds = [];
   for (let i = 0; i < 5; i++) {
     const b = seagull();
@@ -839,6 +911,14 @@ export function createWorld(scene) {
     { type: "BUILDER", x: 6.6, z: -4.8, rot: -0.4 },
     { type: "HARVESTER", x: 12.6, z: -15.2, rot: 1.05 },
     { type: "DEFAULT", x: -6.2, z: 6.4, rot: 0.75 },
+    { type: "FISHERMAN", x: 4.2, z: 34.2, rot: -0.2 },
+    { type: "BEACHGOER", x: 22.4, z: 14.2, rot: 0.3 },
+    { type: "SCOUT", x: -8.4, z: 18.6, rot: 1.1 },
+    { type: "DEFAULT", x: 2.8, z: 20.4, rot: -0.6 },
+    { type: "TRADER", x: -1.6, z: 24.2, rot: 2.8 },
+    { type: "PIRATE", x: ISLAND2.x - 5, z: ISLAND2.z + 18, rot: 0.4 },
+    { type: "HUNTER", x: ISLAND2.x + 4, z: ISLAND2.z + 6, rot: -0.8 },
+    { type: "CHEF", x: ISLAND2.x + 1, z: ISLAND2.z + 12, rot: 1.6 },
   ];
   const people = [];
   for (const n of npcs) {
@@ -867,4 +947,5 @@ export const INTERACTS = [
   { id: "duck", label: "E  Rubber duck", x: 8.4, z: 34.6, r: 2.2 },
   { id: "chest", label: "E  Chest", x: 21.2, z: 22.6, r: 2 },
   { id: "crash", label: "E  Airdrop", x: -26.4, z: 12.2, r: 2.2 },
+  { id: "emberdock", label: "E  Ember dock", x: 112, z: 14, r: 3.2 },
 ];

@@ -108,6 +108,14 @@ export function iconFish(id) {
   `);
 }
 
+export function iconBoat() {
+  return svg(`
+    <rect x="16" y="42" width="48" height="14" rx="4" fill="#3a2616"/>
+    <path d="M16 42 L40 22 L64 42" fill="#f4f5f0"/>
+    <rect x="36" y="28" width="8" height="16" fill="#6ed18a"/>
+  `);
+}
+
 export function iconStat(kind) {
   if (kind === "fish") return svg(`<ellipse cx="40" cy="40" rx="22" ry="12" fill="#4e96bc"/><path d="M60 40 L74 28 V52 Z" fill="#2f6f96"/>`);
   if (kind === "burn") return svg(`<path d="M40 14 C28 34 28 46 40 66 C52 46 52 34 40 14 Z" fill="#e8c15a"/>`);

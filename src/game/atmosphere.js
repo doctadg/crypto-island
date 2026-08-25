@@ -78,8 +78,11 @@ export function tickSky(sky, t) {
 }
 
 export function waterHeight(x, z, t) {
-  const r = Math.hypot(x, z);
-  const mix = Math.max(0, Math.min(1, (r - 34.5) / 7.5));
+  const rHome = Math.hypot(x, z);
+  const rEmber = Math.hypot(x - 118, z + 8);
+  const mixHome = Math.max(0, Math.min(1, (rHome - 34.5) / 7.5));
+  const mixEmber = Math.max(0, Math.min(1, (rEmber - 24) / 7));
+  const mix = Math.min(mixHome, mixEmber);
   if (mix <= 0) return -0.12;
   const w1 = Math.sin(x * 0.16 + t * 1.35) * 0.16;
   const w2 = Math.cos(z * 0.12 + t * 0.95) * 0.11;
@@ -107,7 +110,8 @@ export function createWater() {
       void main() {
         vec3 p = position;
         float r = length(p.xz);
-        float mixW = clamp((r - 34.5) / 7.5, 0.0, 1.0);
+        float r2 = length(p.xz - vec2(118.0, -8.0));
+        float mixW = min(clamp((r - 34.5) / 7.5, 0.0, 1.0), clamp((r2 - 24.0) / 7.0, 0.0, 1.0));
         float w1 = sin(p.x * 0.16 + uTime * 1.35) * 0.16;
         float w2 = cos(p.z * 0.12 + uTime * 0.95) * 0.11;
         float w3 = sin((p.x + p.z) * 0.28 + uTime * 1.8) * 0.05;
