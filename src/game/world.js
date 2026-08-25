@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { C, ISLAND_R } from "./palette.js";
 import { createCharacter } from "./characters.js";
 import { createWater } from "./atmosphere.js";
+import { pillSprite } from "./pill.js";
 
 const BLOCKS = [];
 function block(x, z, r) {
@@ -158,14 +159,7 @@ function seagull() {
 }
 
 function pillMark(scale = 1) {
-  const g = new THREE.Group();
-  const body = mesh(new THREE.CapsuleGeometry(0.38 * scale, 0.72 * scale, 4, 8), C.green);
-  body.rotation.z = Math.PI / 2;
-  const cap = mesh(new THREE.SphereGeometry(0.39 * scale, 8, 6, 0, Math.PI), C.white);
-  cap.rotation.z = Math.PI / 2;
-  cap.position.x = 0.36 * scale;
-  g.add(body, cap);
-  return g;
+  return pillSprite(scale);
 }
 
 function pillFlag() {

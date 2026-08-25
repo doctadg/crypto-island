@@ -2,73 +2,95 @@ export const RODS = {
   none: { id: "none", name: "No rod", burn: 0, luck: 0, zones: [] },
   basic: {
     id: "basic",
-    name: "Basic Rod",
+    name: "Dock Rod",
     burn: 80,
     luck: 0,
     zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK"],
-    note: "Dock and beach water.",
+    note: "Docks and beach water.",
   },
   advanced: {
     id: "advanced",
-    name: "Advanced Rod",
+    name: "Cliff Rod",
     burn: 180,
     luck: 8,
     zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES"],
-    note: "Cliffs and cave water.",
+    note: "Opens cliffs and the cave pool.",
   },
   elite: {
     id: "elite",
-    name: "Elite Rod",
+    name: "Offshore Rod",
     burn: 360,
     luck: 18,
     zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES", "OFFSHORE"],
-    note: "Opens the offshore pool.",
+    note: "Opens the deep offshore pool.",
   },
 };
 
 export const CATCHES = [
-  { id: "blue_snapper", name: "Blue Snapper", rarity: "Common", kind: "credits", value: 12, zones: ["MAIN_DOCK", "EAST_BEACH"], minRod: "basic" },
-  { id: "old_boot", name: "Old Boot", rarity: "Common", kind: "junk", value: 0, zones: ["MAIN_DOCK", "NORTH_DOCK"], minRod: "basic" },
-  { id: "kelp_perch", name: "Kelp Perch", rarity: "Common", kind: "credits", value: 18, zones: ["EAST_BEACH", "NORTH_DOCK"], minRod: "basic" },
-  { id: "bottle_note", name: "Message in a Bottle", rarity: "Uncommon", kind: "collectible", value: 0, zones: ["EAST_BEACH", "CAVES"], minRod: "basic" },
-  { id: "token_trout", name: "Token Trout", rarity: "Uncommon", kind: "token", value: 14, zones: ["NORTH_DOCK", "MAIN_DOCK", "SOUTH_CLIFFS"], minRod: "basic" },
-  { id: "cave_eel", name: "Cave Eel", rarity: "Rare", kind: "credits", value: 55, zones: ["CAVES"], minRod: "advanced" },
-  { id: "locked_crate", name: "Locked Crate", rarity: "Rare", kind: "treasure", value: 0, zones: ["CAVES", "OFFSHORE"], minRod: "advanced" },
-  { id: "golden_tuna", name: "Golden Tuna", rarity: "Epic", kind: "sol", value: 0.04, zones: ["SOUTH_CLIFFS", "OFFSHORE"], minRod: "advanced" },
-  { id: "merch_marlin", name: "Merch Marlin", rarity: "Legendary", kind: "merch", value: 1, zones: ["OFFSHORE", "EAST_BEACH"], minRod: "elite" },
-  { id: "jackpot_leviathan", name: "Jackpot Leviathan", rarity: "Mythic", kind: "sol", value: 0.25, zones: ["OFFSHORE"], minRod: "elite" },
+  { id: "blue_snapper", name: "Blue Snapper", rarity: "Common", kind: "credits", value: 12, zones: ["MAIN_DOCK", "EAST_BEACH"], minRod: "basic", blurb: "Everyday dock fish. Silver-blue, always hungry.", trade: "Redeems for 12 credits." },
+  { id: "old_boot", name: "Old Boot", rarity: "Common", kind: "junk", value: 0, zones: ["MAIN_DOCK", "NORTH_DOCK"], minRod: "basic", blurb: "Somebody lost this in 2004. Keep it as a joke.", trade: "Cannot be traded. Trophy junk." },
+  { id: "kelp_perch", name: "Kelp Perch", rarity: "Common", kind: "credits", value: 18, zones: ["EAST_BEACH", "NORTH_DOCK"], minRod: "basic", blurb: "Fat beach perch with kelp in its gills.", trade: "Redeems for 18 credits." },
+  { id: "bottle_note", name: "Message in a Bottle", rarity: "Uncommon", kind: "collectible", value: 0, zones: ["EAST_BEACH", "CAVES"], minRod: "basic", blurb: "A corked bottle. The note is half-legible island lore.", trade: "Collectible. Stays in your pack." },
+  { id: "token_trout", name: "Token Trout", rarity: "Uncommon", kind: "token", value: 14, zones: ["NORTH_DOCK", "MAIN_DOCK", "SOUTH_CLIFFS"], minRod: "basic", blurb: "Speckled trout with a mint-green stripe.", trade: "Redeems for 14 native TOKEN." },
+  { id: "cave_eel", name: "Cave Eel", rarity: "Rare", kind: "credits", value: 55, zones: ["CAVES"], minRod: "advanced", blurb: "Blind, long, and mean. Lives in the black water.", trade: "Redeems for 55 credits." },
+  { id: "locked_crate", name: "Locked Crate", rarity: "Rare", kind: "treasure", value: 0, zones: ["CAVES", "OFFSHORE"], minRod: "advanced", blurb: "Iron-banded crate. Something knocks inside.", trade: "Treasure. Keep it. No payout yet." },
+  { id: "golden_tuna", name: "Golden Tuna", rarity: "Epic", kind: "sol", value: 0.04, zones: ["SOUTH_CLIFFS", "OFFSHORE"], minRod: "advanced", blurb: "Heavy gold-flank tuna. The island’s first real prize.", trade: "Redeems for 0.04 SOL (preview)." },
+  { id: "crystal_angler", name: "Crystal Angler", rarity: "Epic", kind: "credits", value: 140, zones: ["CAVES", "OFFSHORE"], minRod: "advanced", blurb: "Glass-clear body, a lantern that never goes out.", trade: "Redeems for 140 credits." },
+  { id: "merch_marlin", name: "Merch Marlin", rarity: "Legendary", kind: "merch", value: 1, merch: "Limited Marlin Tee", zones: ["OFFSHORE", "EAST_BEACH"], minRod: "elite", blurb: "A billfish wearing the island’s drop tag.", trade: "Redeems for a Limited Marlin Tee claim (preview)." },
+  { id: "pump_pillfish", name: "Pump Pillfish", rarity: "Legendary", kind: "token", value: 90, zones: ["OFFSHORE", "SOUTH_CLIFFS"], minRod: "elite", blurb: "Shaped like the official pill. Extremely few exist.", trade: "Redeems for 90 native TOKEN." },
+  { id: "moon_marlin", name: "Moon Marlin", rarity: "Mythic", kind: "sol", value: 0.18, zones: ["OFFSHORE"], minRod: "elite", blurb: "Night-silver marlin. Only the offshore black water.", trade: "Redeems for 0.18 SOL (preview)." },
+  { id: "jackpot_leviathan", name: "Jackpot Leviathan", rarity: "Mythic", kind: "sol", value: 0.25, zones: ["OFFSHORE"], minRod: "elite", blurb: "The island’s jackpot. Almost nobody lands it.", trade: "Redeems for 0.25 SOL (preview)." },
+  { id: "vault_whale", name: "Vault Whale", rarity: "Mythic", kind: "bundle", value: 1, zones: ["OFFSHORE"], minRod: "elite", blurb: "A pale whale calf with a vault lock on its tail.", trade: "Redeems for 200 credits + 40 TOKEN + 0.05 SOL (preview)." },
+];
+
+export const SHOP_SWAPS = [
+  { id: "tok20", name: "20 TOKEN", cost: 80, give: { tokens: 20 }, note: "Credits → native token. Preview." },
+  { id: "tok60", name: "60 TOKEN", cost: 210, give: { tokens: 60 }, note: "Bulk token swap. Preview." },
+  { id: "sol01", name: "0.01 SOL", cost: 160, give: { sol: 0.01 }, note: "Preview SOL. No chain." },
+  { id: "sol05", name: "0.05 SOL", cost: 720, give: { sol: 0.05 }, note: "Bigger preview SOL claim." },
+];
+
+export const SHOP_MERCH = [
+  { id: "hat", name: "Dock Hat", cost: 70, merch: "Dock Hat", note: "White brim. Preview fulfilment." },
+  { id: "tee", name: "PUMPISLAND Tee", cost: 140, merch: "PUMPISLAND Tee", note: "Official pill print. Preview." },
+  { id: "hoodie", name: "Island Hoodie", cost: 260, merch: "Island Hoodie", note: "Heavy cotton. Preview." },
+  { id: "rodskin", name: "Mint Rod Wrap", cost: 190, merch: "Mint Rod Wrap", note: "Cosmetic wrap. Preview." },
 ];
 
 const RARITY_WEIGHT = {
-  Common: 52,
-  Uncommon: 26,
-  Rare: 13,
-  Epic: 6,
-  Legendary: 2.4,
-  Mythic: 0.6,
+  Common: 50,
+  Uncommon: 24,
+  Rare: 12,
+  Epic: 7,
+  Legendary: 2.2,
+  Mythic: 0.45,
 };
 
 const ROD_RANK = { basic: 1, advanced: 2, elite: 3 };
 
+function emptyState() {
+  return {
+    wallet: null,
+    tokens: 240,
+    credits: 0,
+    burned: 0,
+    rods: [],
+    equipped: "none",
+    inventory: [],
+    claims: [],
+    merch: [],
+    caught: 0,
+    previewSol: 0,
+  };
+}
+
 export function createEconomy() {
-  const raw = localStorage.getItem("ci-state-v1");
-  const state = raw
-    ? JSON.parse(raw)
-    : {
-        wallet: null,
-        tokens: 240,
-        credits: 0,
-        burned: 0,
-        rods: [],
-        equipped: "none",
-        inventory: [],
-        claims: [],
-        caught: 0,
-        previewSol: 0,
-      };
+  const raw = localStorage.getItem("pi-state-v2");
+  const state = raw ? { ...emptyState(), ...JSON.parse(raw) } : emptyState();
+  if (!Array.isArray(state.merch)) state.merch = [];
 
   function save() {
-    localStorage.setItem("ci-state-v1", JSON.stringify(state));
+    localStorage.setItem("pi-state-v2", JSON.stringify(state));
   }
 
   function connectPreviewWallet() {
@@ -116,7 +138,7 @@ export function createEconomy() {
     if (!pool.length) return { ok: false, reason: "Nothing bites here." };
     const weighted = pool.map((c) => ({
       c,
-      w: Math.max(0.2, RARITY_WEIGHT[c.rarity] + rod.luck * (c.rarity === "Common" ? -0.4 : 0.35)),
+      w: Math.max(0.12, RARITY_WEIGHT[c.rarity] + rod.luck * (c.rarity === "Common" ? -0.4 : 0.38)),
     }));
     const total = weighted.reduce((s, x) => s + x.w, 0);
     let r = Math.random() * total;
@@ -128,12 +150,13 @@ export function createEconomy() {
         break;
       }
     }
+    const keep = pick.kind === "collectible" || pick.kind === "junk" || pick.kind === "treasure";
     const item = {
       uid: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
       ...pick,
       zone,
       at: Date.now(),
-      status: pick.kind === "collectible" || pick.kind === "junk" ? "kept" : "redeemable",
+      status: keep ? "kept" : "redeemable",
     };
     state.inventory.unshift(item);
     state.caught += 1;
@@ -141,15 +164,24 @@ export function createEconomy() {
     return { ok: true, item };
   }
 
+  function applyPayout(item) {
+    if (item.kind === "credits") state.credits += item.value;
+    if (item.kind === "token") state.tokens += item.value;
+    if (item.kind === "sol") state.previewSol += item.value;
+    if (item.kind === "merch") state.merch.unshift({ name: item.merch || item.name, at: Date.now() });
+    if (item.kind === "bundle") {
+      state.credits += 200;
+      state.tokens += 40;
+      state.previewSol += 0.05;
+    }
+  }
+
   function redeem(uid) {
     const item = state.inventory.find((i) => i.uid === uid);
     if (!item) return { ok: false, reason: "Not in inventory." };
     if (item.status !== "redeemable") return { ok: false, reason: "Not redeemable." };
     item.status = "locked";
-    save();
-    if (item.kind === "credits") state.credits += item.value;
-    if (item.kind === "token") state.tokens += item.value;
-    if (item.kind === "sol") state.previewSol += item.value;
+    applyPayout(item);
     item.status = "redeemed";
     item.redeemedAt = Date.now();
     state.claims.unshift({
@@ -157,10 +189,31 @@ export function createEconomy() {
       name: item.name,
       kind: item.kind,
       value: item.value,
-      note: item.kind === "sol" || item.kind === "merch" ? "PREVIEW claim — no chain, no fulfilment" : "Applied locally",
+      note: item.kind === "sol" || item.kind === "merch" || item.kind === "bundle" ? "PREVIEW claim — no chain, no fulfilment" : "Applied locally",
     });
     save();
     return { ok: true, item };
+  }
+
+  function buySwap(id) {
+    const offer = SHOP_SWAPS.find((o) => o.id === id);
+    if (!offer) return { ok: false, reason: "Unknown swap." };
+    if (state.credits < offer.cost) return { ok: false, reason: `Need ${offer.cost} credits.` };
+    state.credits -= offer.cost;
+    if (offer.give.tokens) state.tokens += offer.give.tokens;
+    if (offer.give.sol) state.previewSol += offer.give.sol;
+    save();
+    return { ok: true, offer };
+  }
+
+  function buyMerch(id) {
+    const offer = SHOP_MERCH.find((o) => o.id === id);
+    if (!offer) return { ok: false, reason: "Unknown merch." };
+    if (state.credits < offer.cost) return { ok: false, reason: `Need ${offer.cost} credits.` };
+    state.credits -= offer.cost;
+    state.merch.unshift({ name: offer.merch, at: Date.now() });
+    save();
+    return { ok: true, offer };
   }
 
   return {
@@ -172,6 +225,8 @@ export function createEconomy() {
     canFish,
     rollCatch,
     redeem,
+    buySwap,
+    buyMerch,
   };
 }
 
@@ -184,5 +239,10 @@ export function kindLabel(kind) {
     treasure: "TREASURE",
     collectible: "COLLECTIBLE",
     junk: "JUNK",
+    bundle: "MIXED PAYOUT (PREVIEW)",
   }[kind] || kind;
+}
+
+export function tradeLine(item) {
+  return item.trade || kindLabel(item.kind);
 }

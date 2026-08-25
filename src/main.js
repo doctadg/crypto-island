@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { C, SPAWN } from "./game/palette.js";
 import { createWorld, heightAt, zoneAt, INTERACTS, resolveCollision } from "./game/world.js";
 import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game/characters.js";
-import { createEconomy, RODS, kindLabel } from "./game/economy.js";
+import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, tradeLine } from "./game/economy.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
 import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp } from "./game/atmosphere.js";
 
@@ -49,6 +49,7 @@ let stepAcc = 0;
 let wasGrounded = true;
 let fovSmoothed = 72;
 let lastZone = "";
+let shopTab = "rods";
 const lookSmoothed = { x: 0, y: 0 };
 const mobile = matchMedia("(pointer: coarse)").matches;
 const stick = { active: false, x: 0, y: 0, id: null };
@@ -144,17 +145,12 @@ function openPanel(kind) {
 
 function renderShop() {
   const w = econ.state.wallet || "not linked";
-  panel.innerHTML = `
-    <button class="close-x" type="button" data-act="close">✕</button>
-    <h2>Lighthouse shop</h2>
-    <p class="sub">Preview burn. Tokens leave this local wallet only. No chain write.</p>
-    <div class="row"><div><b>Preview wallet</b><span>${w}</span></div>
-      <button type="button" data-act="connect">${econ.state.wallet ? "LINKED" : "LINK"}</button></div>
-    ${Object.values(RODS)
-      .filter((r) => r.id !== "none")
-      .map((r) => {
-        const owned = econ.state.rods.includes(r.id);
-        return `<div class="row">
+  const tab = shopTab;
+  const rods = Object.values(RODS)
+    .filter((r) => r.id !== "none")
+    .map((r) => {
+      const owned = econ.state.rods.includes(r.id);
+      return `<div class="row">
           <div>
             <b>${r.name}</b>
             <span>Burn ${r.burn} TOKEN · ${r.note}</span>
@@ -165,9 +161,36 @@ function renderShop() {
               : `<button class="primary" type="button" data-act="burn" data-id="${r.id}">BURN ${r.burn}</button>`
           }
         </div>`;
-      })
-      .join("")}
-    <p class="sub">Burned this preview: ${econ.state.burned} TOKEN</p>
+    })
+    .join("");
+  const swaps = SHOP_SWAPS.map(
+    (o) => `<div class="row">
+      <div><b>${o.name}</b><span>${o.cost} credits · ${o.note}</span></div>
+      <button class="primary" type="button" data-act="swap" data-id="${o.id}">SWAP</button>
+    </div>`
+  ).join("");
+  const merch = SHOP_MERCH.map(
+    (o) => `<div class="row">
+      <div><b>${o.name}</b><span>${o.cost} credits · ${o.note}</span></div>
+      <button class="primary" type="button" data-act="merch" data-id="${o.id}">BUY</button>
+    </div>`
+  ).join("");
+  const locker = econ.state.merch.length
+    ? econ.state.merch.map((m) => `<div class="row"><div><b>${m.name}</b><span>preview locker</span></div></div>`).join("")
+    : `<p class="sub">No merch claims yet.</p>`;
+  panel.innerHTML = `
+    <button class="close-x" type="button" data-act="close">✕</button>
+    <h2>Lighthouse shop</h2>
+    <p class="sub">${econ.state.credits} credits · ${econ.state.tokens} TOKEN · ${econ.state.previewSol.toFixed(2)} preview SOL · ${w}</p>
+    <div class="tabs">
+      <button type="button" data-act="tab" data-id="rods" class="${tab === "rods" ? "on" : ""}">RODS</button>
+      <button type="button" data-act="tab" data-id="swap" class="${tab === "swap" ? "on" : ""}">SWAPS</button>
+      <button type="button" data-act="tab" data-id="merch" class="${tab === "merch" ? "on" : ""}">MERCH</button>
+    </div>
+    ${tab === "rods" ? `<div class="row"><div><b>Preview wallet</b><span>${w}</span></div>
+      <button type="button" data-act="connect">${econ.state.wallet ? "LINKED" : "LINK"}</button></div>${rods}<p class="sub">Burned this preview: ${econ.state.burned} TOKEN</p>` : ""}
+    ${tab === "swap" ? `${swaps}<p class="sub">Credits swap into TOKEN or preview SOL. No chain write.</p>` : ""}
+    ${tab === "merch" ? `${merch}${locker}<p class="sub">Merch is a preview locker claim. Nothing ships.</p>` : ""}
   `;
 }
 
@@ -184,7 +207,7 @@ function renderInv(redeemFocus = false) {
               (it) => `<div class="row">
           <div>
             <b>${it.name}</b>
-            <span>${it.rarity} · ${it.zone.replaceAll("_", " ")}</span>
+            <span>${it.rarity} · ${tradeLine(it)}</span>
             <i class="tag ${it.kind}">${kindLabel(it.kind)}</i>
           </div>
           ${
@@ -257,6 +280,33 @@ panel.addEventListener("click", (e) => {
     else toast(`Redeemed ${res.item.name} · ${kindLabel(res.item.kind)}`);
     paintHud();
     renderInv(panelOpen === "redeem");
+    return;
+  }
+  if (act === "tab") {
+    shopTab = btn.dataset.id;
+    renderShop();
+    return;
+  }
+  if (act === "swap") {
+    const res = econ.buySwap(btn.dataset.id);
+    if (!res.ok) toast(res.reason);
+    else {
+      sfx.ui();
+      toast(`Swapped credits for ${res.offer.name}`);
+    }
+    paintHud();
+    renderShop();
+    return;
+  }
+  if (act === "merch") {
+    const res = econ.buyMerch(btn.dataset.id);
+    if (!res.ok) toast(res.reason);
+    else {
+      sfx.ui();
+      toast(`Claimed ${res.offer.name} (preview locker)`);
+    }
+    paintHud();
+    renderShop();
   }
 });
 
@@ -294,39 +344,61 @@ function castPoint() {
   };
 }
 
+function lookingAtWater() {
+  const dir = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+  for (const dist of [3.2, 5.4, 8.2, 11]) {
+    const x = camera.position.x + dir.x * dist;
+    const z = camera.position.z + dir.z * dist;
+    const y = camera.position.y + dir.y * dist;
+    if (y < 1.4 && heightAt(x, z) < 0.35) return { ok: true, x, z };
+  }
+  return { ok: false };
+}
+
 function showCatch(item) {
   if (!catchCard) return;
   document.getElementById("catch-rarity").textContent = item.rarity.toUpperCase();
   document.getElementById("catch-name").textContent = item.name;
+  const blurb = document.getElementById("catch-blurb");
+  if (blurb) blurb.textContent = item.blurb || "";
   document.getElementById("catch-kind").textContent = kindLabel(item.kind);
+  const trade = document.getElementById("catch-trade");
+  if (trade) trade.textContent = tradeLine(item);
   catchCard.classList.remove("hidden");
-  catchTimer = 2.8;
+  catchTimer = 8;
   catchProp.visible = true;
   sfx.catch(item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "Epic");
 }
 
 function beginCast() {
   if (fishing || panelOpen || !playing) return;
-  const zone = zoneAt(camera.position.x, camera.position.z);
-  const waterNear = heightAt(camera.position.x, camera.position.z) < 0.55 || zone.fish;
-  if (!waterNear) {
-    toast("Walk to a fishing spot.");
+  if (catchCard && !catchCard.classList.contains("hidden")) return;
+  const aim = lookingAtWater();
+  if (!aim.ok) {
+    toast("Look at the water to cast.");
     return;
   }
-  const gate = econ.canFish(zone.id);
+  const zone = zoneAt(aim.x, aim.z);
+  const here = zoneAt(camera.position.x, camera.position.z);
+  const useZone = zone.fish ? zone : here;
+  const waterNear = heightAt(aim.x, aim.z) < 0.35;
+  if (!waterNear) {
+    toast("Look at the water to cast.");
+    return;
+  }
+  const gate = econ.canFish(useZone.id);
   if (!gate.ok) {
     toast(gate.reason);
     return;
   }
-  const pt = castPoint();
   fishing = {
     t: 0,
     phase: "cast",
-    zone: zone.id,
+    zone: useZone.id,
     window: 0.85 + Math.random() * 0.45,
     biteAt: 1.25 + Math.random() * 1.7,
-    bx: pt.x,
-    bz: pt.z,
+    bx: aim.x,
+    bz: aim.z,
   };
   sfx.cast();
   setCastUI("cast", "THROWING LINE", 12);
@@ -439,7 +511,8 @@ function updatePrompt() {
     return;
   }
   if (lastInteract) promptEl.textContent = lastInteract.label;
-  else if (zone.fish) promptEl.textContent = econ.state.equipped === "none" ? "Need a rod · E at the lighthouse" : "F / click to cast";
+  else if (lookingAtWater().ok) promptEl.textContent = econ.state.equipped === "none" ? "Need a rod · E at the lighthouse" : "F / click to cast";
+  else if (zone.fish) promptEl.textContent = "Look at the water to cast";
   else promptEl.textContent = "";
 }
 
@@ -491,8 +564,12 @@ function stepPlayer(dt) {
   camera.position.y += vel.y * dt;
 
   const floor = heightAt(camera.position.x, camera.position.z) + eyeHeight();
-  const grounded = camera.position.y <= floor + 0.04;
-  if (camera.position.y < floor) {
+  const grounded = camera.position.y <= floor + 0.08;
+  const rise = floor - camera.position.y;
+  if (rise > 0 && rise < 1.15 && vel.y <= 0.4) {
+    camera.position.y += Math.min(rise, dt * 7.2);
+    vel.y = Math.max(vel.y, 0);
+  } else if (camera.position.y < floor) {
     camera.position.y = floor;
     vel.y = 0;
   }
@@ -570,6 +647,7 @@ document.addEventListener("mousemove", (e) => {
 });
 canvas.addEventListener("click", () => {
   if (!playing || panelOpen) return;
+  if (catchCard && !catchCard.classList.contains("hidden")) return;
   if (!pointerLocked && !mobile) canvas.requestPointerLock();
   else reel();
 });
@@ -634,6 +712,13 @@ function bindStick() {
     ly = t.clientY;
   }, { passive: true });
 }
+
+document.getElementById("catch-keep")?.addEventListener("click", () => {
+  catchCard.classList.add("hidden");
+  catchProp.visible = false;
+  catchTimer = 0;
+  sfx.ui();
+});
 
 document.getElementById("enter-btn").addEventListener("click", () => {
   boot.classList.add("hidden");

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { C } from "./palette.js";
+import { pillDecal } from "./pill.js";
 
 const mat = (color, extras = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...extras });
@@ -31,17 +32,6 @@ function capsule(r, len, color, y = 0) {
   m.position.y = y;
   m.castShadow = true;
   return m;
-}
-
-function pillDecal(scale = 1) {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.055 * scale, 0.1 * scale, 3, 7), mat(C.white));
-  body.rotation.z = Math.PI / 2;
-  const half = new THREE.Mesh(new THREE.SphereGeometry(0.057 * scale, 7, 6, 0, Math.PI), mat(C.pillGreen));
-  half.rotation.z = Math.PI / 2;
-  half.position.x = -0.05 * scale;
-  g.add(body, half);
-  return g;
 }
 
 export const ARCHETYPES = {
@@ -303,19 +293,19 @@ export function createFirstPersonArms(rodEquipped) {
   const cloth = mat(C.white);
 
   const lArm = new THREE.Group();
-  const lSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.28), cloth);
-  lSleeve.position.set(-0.18, -0.2, -0.32);
-  lSleeve.rotation.x = 0.35;
-  const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, 0.07), skin);
-  lHand.position.set(-0.18, -0.16, -0.48);
+  const lSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.34), cloth);
+  lSleeve.position.set(-0.16, -0.22, -0.28);
+  lSleeve.rotation.x = 0.55;
+  const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.055, 0.08), skin);
+  lHand.position.set(-0.14, -0.14, -0.46);
   lArm.add(lSleeve, lHand);
 
   const rArm = new THREE.Group();
-  const rSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.3), cloth);
-  rSleeve.position.set(0.2, -0.22, -0.3);
-  rSleeve.rotation.x = 0.42;
-  const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, 0.07), skin);
-  rHand.position.set(0.22, -0.17, -0.46);
+  const rSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.085, 0.36), cloth);
+  rSleeve.position.set(0.18, -0.24, -0.26);
+  rSleeve.rotation.x = 0.72;
+  const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.06, 0.09), skin);
+  rHand.position.set(0.2, -0.13, -0.44);
   rArm.add(rSleeve, rHand);
 
   g.add(lArm, rArm);
@@ -325,25 +315,25 @@ export function createFirstPersonArms(rodEquipped) {
   g.userData.line = null;
 
   if (rodEquipped) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.013, 1.65, 6), mat(0x3a2a18));
-    pole.position.set(0.26, 0.04, -0.86);
-    pole.rotation.x = 1.12;
-    pole.rotation.z = -0.16;
-    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.018, 8), mat(C.clothBlack));
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.16, 6), mat(0x5a3a1c));
+    grip.rotation.x = 1.15;
+    grip.position.set(0.2, -0.12, -0.42);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.014, 1.55, 7), mat(0x3a2a18));
+    pole.position.set(0.24, 0.12, -0.78);
+    pole.rotation.x = 1.05;
+    pole.rotation.z = -0.08;
+    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.02, 8), mat(C.clothBlack));
     reel.rotation.z = Math.PI / 2;
-    reel.position.set(0.22, -0.1, -0.44);
-    const tip = new THREE.Object3D();
-    tip.position.set(0.42, 0.62, -1.55);
+    reel.position.set(0.18, -0.08, -0.4);
     const lineGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0.42, 0.62, -1.55),
-      new THREE.Vector3(0.55, -0.35, -3.4),
+      new THREE.Vector3(0.38, 0.72, -1.42),
+      new THREE.Vector3(0.5, -0.28, -3.1),
     ]);
     const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xdfe8e2, transparent: true, opacity: 0.55 }));
     line.visible = false;
-    g.add(pole, reel, tip, line);
+    g.add(grip, pole, reel, line);
     g.userData.pole = pole;
     g.userData.reel = reel;
-    g.userData.tip = tip;
     g.userData.line = line;
   }
   return g;
