@@ -224,6 +224,38 @@ button { font-family: inherit; cursor: pointer; }
   text-align: center;
   pointer-events: none;
 }
+.quest-list {
+  position: absolute;
+  left: 16px;
+  top: 92px;
+  width: min(250px, calc(100vw - 32px));
+  padding: 10px 12px 8px;
+  background: rgba(8,14,12,0.78);
+  border: 1px solid rgba(125,227,154,0.28);
+  pointer-events: none;
+}
+.quest-list p {
+  margin: 0 0 8px;
+  font: 700 10px/1 var(--mono);
+  letter-spacing: 0.16em;
+  color: #7de39a;
+}
+.quest-list li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 8px;
+  margin: 0 0 6px;
+  font: 600 12px/1.3 var(--sans);
+  color: #dfe8e2;
+  list-style: none;
+}
+.quest-list ul { margin: 0; padding: 0; }
+.quest-list li.done { color: #7de39a; text-decoration: line-through; }
+.quest-list i {
+  font-style: normal;
+  font: 700 11px/1 var(--mono);
+  color: #7de39a;
+}
 
 .cast-meter {
   position: absolute; left: 50%; bottom: 96px;

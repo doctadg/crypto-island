@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { C, SPAWN } from "./game/palette.js";
+import { C, SPAWN, ISLAND_R, ISLAND2 } from "./game/palette.js";
 import { createWorld, heightAt, zoneAt, INTERACTS, resolveCollision } from "./game/world.js";
 import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game/characters.js";
 import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, SHOP_GEAR, tradeLine } from "./game/economy.js";
@@ -7,6 +7,7 @@ import { iconRod, iconSwap, iconMerch, iconFish, iconStat, iconBoat } from "./ga
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
 import { createSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
 import { createMinimap } from "./game/minimap.js";
+import { questStatus } from "./game/quests.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -134,6 +135,16 @@ function paintHud() {
     rodSlot.textContent = rod.name.toUpperCase();
     rodSlot.classList.remove("empty");
   }
+  paintQuests();
+}
+
+function paintQuests() {
+  const el = document.getElementById("quest-list");
+  if (!el) return;
+  const rows = questStatus(econ.state);
+  el.innerHTML = `<p>OBJECTIVES</p><ul>${rows
+    .map((q) => `<li class="${q.done ? "done" : ""}"><i>${q.done ? "✓" : "○"}</i>${q.label}</li>`)
+    .join("")}</ul>`;
 }
 
 function freeMouse() {
@@ -658,10 +669,13 @@ function stepSail(dt) {
   if (k >= 1) {
     const name = sailing.label;
     sailing = null;
+    if (name === "Ember Atoll") econ.markEmber();
     toast(`Landed · ${name}`);
+    paintHud();
   }
 }
 
+let lastShoreToast = 0;
 function stepPlayer(dt) {
   if (sailing) {
     stepSail(dt);
@@ -670,10 +684,11 @@ function stepPlayer(dt) {
   const tSec = performance.now() / 1000;
   const landY = heightAt(camera.position.x, camera.position.z);
   const waveY = waterHeight(camera.position.x, camera.position.z, tSec);
-  const onWater = landY < 0.08;
-  const groundedY = onWater ? Math.max(landY, waveY) : landY;
+  const onWater = landY < 0.12;
+  const waterSurface = Math.max(waveY, 0.02);
+  const groundedY = onWater ? waterSurface : landY;
   const sprint = !!(keys.ShiftLeft || keys.ShiftRight);
-  const speed = (sprint ? 8.4 : 5.1) * (crouch ? 0.42 : 1) * (onWater ? 0.48 : 1) * (fishing ? 0.32 : 1);
+  const speed = (sprint ? 8.4 : 5.1) * (crouch ? 0.42 : 1) * (onWater ? 0.55 : 1) * (fishing ? 0.32 : 1);
 
   wish.set(0, 0, 0);
   if (keys.KeyW || keys.ArrowUp) wish.z -= 1;
@@ -697,10 +712,39 @@ function stepPlayer(dt) {
     }
     keys._jump = false;
   }
-  vel.y -= (onWater ? 12 : 20) * dt;
+  vel.y -= (onWater ? 9 : 20) * dt;
 
   let nx = camera.position.x + vel.x * dt;
   let nz = camera.position.z + vel.z * dt;
+  if (!econ.state.boat) {
+    const rHome = Math.hypot(nx, nz);
+    const shore = ISLAND_R + 1.6;
+    if (rHome > shore) {
+      const k = shore / rHome;
+      nx *= k;
+      nz *= k;
+      vel.x *= 0.15;
+      vel.z *= 0.15;
+      const now = performance.now();
+      if (now - lastShoreToast > 2200) {
+        lastShoreToast = now;
+        toast("Need the Island Skiff to leave Pump Island.");
+      }
+    }
+  } else {
+    const rHome = Math.hypot(nx, nz);
+    const rEmber = Math.hypot(nx - ISLAND2.x, nz - ISLAND2.z);
+    const maxR = 210;
+    if (rHome > maxR && rEmber > ISLAND2.r + 18) {
+      if (rHome < rEmber) {
+        const k = maxR / rHome;
+        nx *= k;
+        nz *= k;
+      }
+      vel.x *= 0.2;
+      vel.z *= 0.2;
+    }
+  }
   const hit = resolveCollision(nx, nz);
   if (hit.x !== nx || hit.z !== nz) {
     vel.x *= 0.2;
@@ -710,10 +754,16 @@ function stepPlayer(dt) {
   camera.position.z = hit.z;
   camera.position.y += vel.y * dt;
 
-  const floor = heightAt(camera.position.x, camera.position.z) + eyeHeight();
-  const grounded = camera.position.y <= floor + 0.1;
+  const landFloor = heightAt(camera.position.x, camera.position.z);
+  const wet = landFloor < 0.12;
+  const wave = waterHeight(camera.position.x, camera.position.z, tSec);
+  const floor = (wet ? Math.max(wave, 0.02) : landFloor) + eyeHeight();
+  const grounded = camera.position.y <= floor + 0.12;
   const rise = floor - camera.position.y;
-  if (rise > 0 && rise < 0.42 && vel.y <= 0.6) {
+  if (wet && vel.y <= 1.2) {
+    camera.position.y += rise * Math.min(1, dt * 6.5);
+    vel.y *= 0.72;
+  } else if (rise > 0 && rise < 0.42 && vel.y <= 0.6) {
     camera.position.y += Math.min(rise, dt * 8.5);
     vel.y = Math.max(vel.y, 0);
   } else if (camera.position.y < floor) {

@@ -92,6 +92,7 @@ function emptyState() {
     claims: [],
     merch: [],
     boat: false,
+    visitedEmber: false,
     caught: 0,
     previewSol: 0,
   };
@@ -102,6 +103,7 @@ export function createEconomy() {
   const state = raw ? { ...emptyState(), ...JSON.parse(raw) } : emptyState();
   if (!Array.isArray(state.merch)) state.merch = [];
   if (typeof state.boat !== "boolean") state.boat = false;
+  if (typeof state.visitedEmber !== "boolean") state.visitedEmber = false;
   if (!state.rods?.length) {
     state.rods = ["basic"];
     state.equipped = "basic";
@@ -260,6 +262,12 @@ export function createEconomy() {
     buySwap,
     buyMerch,
     buyGear,
+    markEmber() {
+      if (!state.visitedEmber) {
+        state.visitedEmber = true;
+        save();
+      }
+    },
   };
 }
 
