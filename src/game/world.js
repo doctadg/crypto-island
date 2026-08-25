@@ -140,6 +140,131 @@ function grassTuft() {
   return g;
 }
 
+function signPost(text) {
+  const g = new THREE.Group();
+  const pole = mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.55, 5), C.woodDark);
+  pole.position.y = 0.78;
+  const board = mesh(new THREE.BoxGeometry(1.35, 0.48, 0.06), C.wood);
+  board.position.set(0, 1.42, 0.04);
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 96;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#6a4528";
+  ctx.fillRect(0, 0, 256, 96);
+  ctx.fillStyle = "#f4efe4";
+  ctx.font = "bold 28px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, 128, 48);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.28, 0.42),
+    new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })
+  );
+  face.position.set(0, 1.42, 0.08);
+  g.add(pole, board, face);
+  return g;
+}
+
+function giantBoot() {
+  const g = new THREE.Group();
+  const sole = mesh(new THREE.BoxGeometry(1.4, 0.22, 0.62), 0x3a2616);
+  sole.position.y = 0.14;
+  const vamp = mesh(new THREE.BoxGeometry(0.82, 0.55, 0.58), 0x5c3d24);
+  vamp.position.set(-0.18, 0.48, 0);
+  const toe = mesh(new THREE.BoxGeometry(0.48, 0.28, 0.56), 0x4a3220);
+  toe.position.set(0.48, 0.28, 0);
+  g.add(sole, vamp, toe);
+  return g;
+}
+
+function hiddenToilet() {
+  const g = new THREE.Group();
+  const bowl = mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.32, 8), C.white);
+  bowl.position.y = 0.22;
+  const tank = mesh(new THREE.BoxGeometry(0.32, 0.38, 0.16), C.white);
+  tank.position.set(0, 0.52, -0.22);
+  const seat = mesh(new THREE.TorusGeometry(0.22, 0.04, 6, 10), 0xd8ddd6);
+  seat.rotation.x = Math.PI / 2;
+  seat.position.y = 0.38;
+  g.add(bowl, tank, seat);
+  return g;
+}
+
+function tinyShrine() {
+  const g = new THREE.Group();
+  const slab = mesh(new THREE.BoxGeometry(0.9, 0.16, 0.7), C.rock);
+  slab.position.y = 0.08;
+  const pill = createPillMesh(0.42);
+  pill.position.set(0, 0.48, 0.08);
+  g.add(slab, pill);
+  return g;
+}
+
+function washedUpPc() {
+  const g = new THREE.Group();
+  const body = mesh(new THREE.BoxGeometry(0.72, 0.42, 0.18), 0x2a2c2a);
+  body.position.y = 0.24;
+  const screen = mesh(new THREE.BoxGeometry(0.58, 0.3, 0.02), 0x6ed18a);
+  screen.position.set(0, 0.26, 0.1);
+  g.add(body, screen);
+  return g;
+}
+
+function rubberDuck() {
+  const g = new THREE.Group();
+  const body = mesh(new THREE.SphereGeometry(0.22, 8, 6), 0xf0c36a);
+  body.scale.set(1.15, 0.75, 1);
+  body.position.y = 0.16;
+  const head = mesh(new THREE.SphereGeometry(0.13, 7, 6), 0xf0c36a);
+  head.position.set(0.14, 0.32, 0);
+  const bill = mesh(new THREE.BoxGeometry(0.1, 0.04, 0.08), 0xe07a28);
+  bill.position.set(0.26, 0.3, 0);
+  g.add(body, head, bill);
+  return g;
+}
+
+function flowerPatch() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 7; i++) {
+    const stem = mesh(new THREE.BoxGeometry(0.025, 0.22, 0.025), C.green, false);
+    stem.position.set((i - 3) * 0.09, 0.11, (i % 3) * 0.06);
+    const bloom = mesh(new THREE.SphereGeometry(0.05, 5, 4), i % 2 ? 0xe8c15a : 0xe4a0ff, false);
+    bloom.position.set(stem.position.x, 0.24, stem.position.z);
+    g.add(stem, bloom);
+  }
+  return g;
+}
+
+function boulder() {
+  const g = new THREE.Group();
+  const rock = mesh(new THREE.DodecahedronGeometry(0.55, 0), C.rock);
+  rock.scale.set(1.2, 0.7, 1);
+  rock.position.y = 0.22;
+  g.add(rock);
+  return g;
+}
+
+function campfire() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const log = mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.55, 5), C.woodDark);
+    log.rotation.z = Math.PI / 2;
+    log.rotation.y = a;
+    log.position.set(Math.cos(a) * 0.12, 0.06, Math.sin(a) * 0.12);
+    g.add(log);
+  }
+  const flame = mesh(new THREE.ConeGeometry(0.16, 0.38, 5), C.torch);
+  flame.position.y = 0.32;
+  flame.material.emissive = new THREE.Color(C.torch);
+  flame.material.emissiveIntensity = 0.7;
+  g.add(flame);
+  return g;
+}
+
 function seagull() {
   const g = new THREE.Group();
   const mat = new THREE.MeshLambertMaterial({ color: 0xf4f6f2, flatShading: true });
@@ -561,9 +686,34 @@ export function createWorld(scene) {
     [3.2, 18.4], [5.1, 14.2], [-4.4, 16.6], [2.2, 8.8], [-2.6, 11.4],
     [7.8, 6.2], [-8.2, 9.4], [4.6, -2.2], [-1.8, -6.4], [9.2, -9.6],
     [1.4, 20.2], [-5.6, 4.2], [11.2, 2.4], [-3.2, 19.5], [6.4, 12.8],
+    [13.4, -6.2], [-10.2, 3.4], [8.8, 16.2], [-7.4, -4.8], [16.2, 7.4],
+    [0.6, 14.6], [4.2, -11.4], [-12.6, 8.8], [19.4, 4.2], [-2.2, 22.4],
   ]) {
     place(root, grassTuft(), x, z);
   }
+  for (const [x, z] of [
+    [6.4, 18.8], [-5.2, 20.2], [10.8, 5.4], [-8.6, 14.2], [3.6, -8.4], [14.2, 13.6],
+  ]) {
+    place(root, flowerPatch(), x, z);
+  }
+  for (const [x, z] of [
+    [4.8, -6.2], [-9.4, 2.2], [13.6, -3.4], [-4.2, -10.6], [18.2, 1.6],
+  ]) {
+    place(root, boulder(), x, z, x * 0.2, 0, 0.55);
+  }
+  place(root, campfire(), -14.8, 15.2, 0, 0, 0.6);
+
+  place(root, signPost("NO RUGS"), 3.4, 28.6, 0.1, 0, 0.35);
+  place(root, signPost("CAST HERE"), 4.8, 33.2, -0.2, 0, 0.35);
+  place(root, signPost("BEWARE CHEF"), -4.2, 8.8, 0.4, 0, 0.35);
+  place(root, giantBoot(), 29.6, 6.2, -0.6, 0, 0.7);
+  place(root, hiddenToilet(), 19.4, 18.8, 0.8, 0.05, 0.45);
+  place(root, tinyShrine(), -8.8, -8.4, 0.2, 0, 0.5);
+  place(root, washedUpPc(), 26.8, 17.4, 0.5, 0, 0.4);
+  const duck = rubberDuck();
+  duck.position.set(8.4, 0.18, 34.6);
+  duck.userData.float = true;
+  root.add(duck);
 
   const birds = [];
   for (let i = 0; i < 5; i++) {
@@ -579,7 +729,7 @@ export function createWorld(scene) {
 
   const npcs = [
     { type: "TRADER", x: 5.4, z: 22.8, rot: Math.PI },
-    { type: "FISHERMAN", x: 2.4, z: 33.6, rot: 0.15 },
+    { type: "FISHERMAN", x: -2.8, z: 30.4, rot: 0.4 },
     { type: "DEFAULT", x: -3.4, z: 27.8, rot: 0.5 },
     { type: "BEACHGOER", x: 24.8, z: 10.6, rot: -0.8 },
     { type: "SCOUT", x: 9.8, z: -12.2, rot: 0.4 },
@@ -602,7 +752,7 @@ export function createWorld(scene) {
   }
 
   scene.add(root);
-  return { root, ocean, people, lighthouse: light, birds };
+  return { root, ocean, people, lighthouse: light, birds, duck };
 }
 
 export const INTERACTS = [
@@ -610,4 +760,9 @@ export const INTERACTS = [
   { id: "board", label: "E  Log", x: 1.4, z: 8.2, r: 2.4 },
   { id: "redeem", label: "E  Redeem", x: 4.2, z: 24.4, r: 2.6 },
   { id: "boat", label: "E  Boat", x: -31, z: 5.6, r: 3 },
+  { id: "boot", label: "E  Giant boot", x: 29.6, z: 6.2, r: 2.2 },
+  { id: "loo", label: "E  Secret loo", x: 19.4, z: 18.8, r: 2 },
+  { id: "shrine", label: "E  Pill shrine", x: -8.8, z: -8.4, r: 2 },
+  { id: "pc", label: "E  Washed-up PC", x: 26.8, z: 17.4, r: 2 },
+  { id: "duck", label: "E  Rubber duck", x: 8.4, z: 34.6, r: 2.2 },
 ];

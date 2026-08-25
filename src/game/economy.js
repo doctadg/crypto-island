@@ -74,8 +74,8 @@ function emptyState() {
     tokens: 240,
     credits: 0,
     burned: 0,
-    rods: [],
-    equipped: "none",
+    rods: ["basic"],
+    equipped: "basic",
     inventory: [],
     claims: [],
     merch: [],
@@ -85,12 +85,16 @@ function emptyState() {
 }
 
 export function createEconomy() {
-  const raw = localStorage.getItem("pi-state-v2");
+  const raw = localStorage.getItem("pi-state-v3");
   const state = raw ? { ...emptyState(), ...JSON.parse(raw) } : emptyState();
   if (!Array.isArray(state.merch)) state.merch = [];
+  if (!state.rods?.length) {
+    state.rods = ["basic"];
+    state.equipped = "basic";
+  }
 
   function save() {
-    localStorage.setItem("pi-state-v2", JSON.stringify(state));
+    localStorage.setItem("pi-state-v3", JSON.stringify(state));
   }
 
   function connectPreviewWallet() {

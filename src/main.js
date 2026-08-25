@@ -5,7 +5,7 @@ import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game
 import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, tradeLine } from "./game/economy.js";
 import { iconRod, iconSwap, iconMerch, iconFish, iconStat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
-import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp } from "./game/atmosphere.js";
+import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -359,8 +359,14 @@ function tryInteract() {
   if (lastInteract.id === "redeem") openPanel("redeem");
   if (lastInteract.id === "boat") {
     camera.position.set(-28, 1.4, 4.2);
-    toast("Skiff ride · offshore water is live. Cast from here with Elite.");
+    toast("Skiff ride · offshore water is live.");
+    return;
   }
+  if (lastInteract.id === "boot") toast("Size 400. Someone lost the other one.");
+  if (lastInteract.id === "loo") toast("Cave plumbing. Do not fish here.");
+  if (lastInteract.id === "shrine") toast("The pill watches. Burn wisely.");
+  if (lastInteract.id === "pc") toast("Still compiling. Since 2004.");
+  if (lastInteract.id === "duck") toast("Quack. Not a fish. You cannot redeem this.");
 }
 
 function setCastUI(phase, label, fill) {
@@ -449,7 +455,11 @@ function placeBobber(t) {
     return;
   }
   const bob = Math.sin(t * 3.2) * 0.05;
-  bobber.position.set(fishing.bx, 0.14 + bob, fishing.bz);
+  const tNow = performance.now() / 1000;
+  const wy = waterHeight(fishing.bx, fishing.bz, tNow);
+  bobber.position.set(fishing.bx, wy + 0.08 + bob, fishing.bz);
+  bobber.rotation.z = Math.sin(tNow * 2.1) * 0.18;
+  bobber.rotation.x = Math.cos(tNow * 1.6) * 0.12;
   bobber.visible = fishing.phase !== "cast" || fishing.t > 0.28;
 }
 
@@ -557,8 +567,11 @@ function applyLook(dx, dy) {
 }
 
 function stepPlayer(dt) {
-  const groundedY = heightAt(camera.position.x, camera.position.z);
-  const onWater = groundedY < 0.22;
+  const tSec = performance.now() / 1000;
+  const landY = heightAt(camera.position.x, camera.position.z);
+  const waveY = waterHeight(camera.position.x, camera.position.z, tSec);
+  const onWater = landY < 0.28;
+  const groundedY = onWater ? Math.max(landY, waveY) : landY;
   const sprint = !!(keys.ShiftLeft || keys.ShiftRight);
   const speed = (sprint ? 8.4 : 5.1) * (crouch ? 0.42 : 1) * (onWater ? 0.48 : 1) * (fishing ? 0.32 : 1);
 
@@ -632,7 +645,7 @@ function stepPlayer(dt) {
   const sway = moving ? Math.cos(bobT * 0.5) * 0.014 : 0;
   if (arms) {
     arms.position.set(sway, bob - (crouch ? 0.08 : 0), 0);
-    if (!fishing) poseFishingArms(arms, "idle", 0);
+    if (!fishing) poseFishingArms(arms, "idle", tSec);
   }
 
   const wantFov = sprint && moving ? 80 : 72;
@@ -836,7 +849,13 @@ function frame(now) {
   }
   tickSky(sky, now / 1000);
   tickSplash(splash, dt);
-  if (world.ocean?.material?.uniforms?.uTime) world.ocean.material.uniforms.uTime.value = now / 1000;
+  const tSec = now / 1000;
+  if (world.ocean?.material?.uniforms?.uTime) world.ocean.material.uniforms.uTime.value = tSec;
+  if (world.duck) {
+    world.duck.position.y = waterHeight(world.duck.position.x, world.duck.position.z, tSec) + 0.1;
+    world.duck.rotation.z = Math.sin(tSec * 1.7) * 0.2;
+    world.duck.rotation.y += dt * 0.15;
+  }
   if (catchProp.visible) {
     catchProp.rotation.y += dt * 1.6;
     catchProp.position.y = -0.12 + Math.sin(now / 220) * 0.02;

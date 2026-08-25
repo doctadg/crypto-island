@@ -293,19 +293,21 @@ export function createFirstPersonArms(rodEquipped) {
   const cloth = mat(C.white);
 
   const lArm = new THREE.Group();
-  const lSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.34), cloth);
-  lSleeve.position.set(-0.16, -0.22, -0.28);
-  lSleeve.rotation.x = 0.55;
-  const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.055, 0.08), skin);
-  lHand.position.set(-0.14, -0.14, -0.46);
+  const lSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.28), cloth);
+  lSleeve.position.set(-0.18, -0.34, -0.38);
+  lSleeve.rotation.x = 1.05;
+  lSleeve.rotation.z = 0.22;
+  const lHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, 0.07), skin);
+  lHand.position.set(-0.1, -0.26, -0.52);
   lArm.add(lSleeve, lHand);
 
   const rArm = new THREE.Group();
-  const rSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.085, 0.36), cloth);
-  rSleeve.position.set(0.18, -0.24, -0.26);
-  rSleeve.rotation.x = 0.72;
-  const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.06, 0.09), skin);
-  rHand.position.set(0.2, -0.13, -0.44);
+  const rSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.075, 0.3), cloth);
+  rSleeve.position.set(0.2, -0.36, -0.34);
+  rSleeve.rotation.x = 1.18;
+  rSleeve.rotation.z = -0.28;
+  const rHand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.055, 0.08), skin);
+  rHand.position.set(0.16, -0.26, -0.5);
   rArm.add(rSleeve, rHand);
 
   g.add(lArm, rArm);
@@ -313,25 +315,51 @@ export function createFirstPersonArms(rodEquipped) {
   g.userData.rArm = rArm;
   g.userData.pole = null;
   g.userData.line = null;
+  g.userData.reel = null;
+  g.userData.rod = null;
 
   if (rodEquipped) {
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.16, 6), mat(0x5a3a1c));
-    grip.rotation.x = 1.15;
-    grip.position.set(0.2, -0.12, -0.42);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.014, 1.55, 7), mat(0x3a2a18));
-    pole.position.set(0.24, 0.12, -0.78);
-    pole.rotation.x = 1.05;
-    pole.rotation.z = -0.08;
-    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.02, 8), mat(C.clothBlack));
+    const rod = new THREE.Group();
+    rod.name = "held-rod";
+
+    const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.18, 8), mat(0x8a5a2a));
+    cork.rotation.x = 1.22;
+    cork.position.set(0.16, -0.24, -0.5);
+
+    const butt = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.02, 0.07, 8), mat(0x2a1a10));
+    butt.rotation.x = 1.22;
+    butt.position.set(0.14, -0.3, -0.42);
+
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.018, 1.55, 8), mat(0x3a2616));
+    pole.position.set(0.22, 0.18, -1.12);
+    pole.rotation.x = 1.18;
+    pole.rotation.z = -0.18;
+
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.006, 0.22, 6), mat(0x6ed18a));
+    tip.position.set(0.28, 0.62, -1.68);
+    tip.rotation.x = 1.18;
+    tip.rotation.z = -0.18;
+
+    const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.022, 10), mat(C.clothBlack));
     reel.rotation.z = Math.PI / 2;
-    reel.position.set(0.18, -0.08, -0.4);
+    reel.position.set(0.12, -0.2, -0.48);
+    const spool = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.006, 6, 10), mat(0x6ed18a));
+    spool.rotation.y = Math.PI / 2;
+    spool.position.copy(reel.position);
+
     const lineGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0.38, 0.72, -1.42),
-      new THREE.Vector3(0.5, -0.28, -3.1),
+      new THREE.Vector3(0.3, 0.7, -1.78),
+      new THREE.Vector3(0.36, -0.02, -3.2),
     ]);
-    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xdfe8e2, transparent: true, opacity: 0.55 }));
+    const line = new THREE.Line(
+      lineGeo,
+      new THREE.LineBasicMaterial({ color: 0xe8f2ec, transparent: true, opacity: 0.7 })
+    );
     line.visible = false;
-    g.add(grip, pole, reel, line);
+
+    rod.add(cork, butt, pole, tip, reel, spool, line);
+    g.add(rod);
+    g.userData.rod = rod;
     g.userData.pole = pole;
     g.userData.reel = reel;
     g.userData.line = line;
@@ -343,39 +371,39 @@ export function poseFishingArms(arms, phase, t) {
   if (!arms) return;
   const r = arms.userData.rArm;
   const l = arms.userData.lArm;
-  const pole = arms.userData.pole;
+  const rod = arms.userData.rod;
   const line = arms.userData.line;
   if (!r) return;
   if (phase === "cast") {
     const k = Math.min(1, t / 0.38);
-    r.rotation.x = -1.15 * k;
-    l.rotation.x = -0.35 * k;
-    if (pole) pole.rotation.x = 1.12 - 0.85 * k;
-    if (line) line.visible = k > 0.7;
+    r.rotation.x = -1.35 * k;
+    l.rotation.x = -0.45 * k;
+    if (rod) rod.rotation.x = -0.95 * k;
+    if (line) line.visible = k > 0.65;
   } else if (phase === "wait") {
-    r.rotation.x = -0.28 + Math.sin(t * 2.2) * 0.04;
-    l.rotation.x = -0.12;
-    if (pole) pole.rotation.x = 0.42 + Math.sin(t * 2.2) * 0.03;
+    r.rotation.x = -0.18 + Math.sin(t * 1.8) * 0.03;
+    l.rotation.x = -0.1;
+    if (rod) rod.rotation.x = -0.08 + Math.sin(t * 1.8) * 0.02;
     if (line) {
       line.visible = true;
       const pos = line.geometry.attributes.position;
-      pos.setY(1, -0.35 + Math.sin(t * 3.4) * 0.08);
+      pos.setY(1, -0.08 + Math.sin(t * 2.6) * 0.1);
       pos.needsUpdate = true;
     }
   } else if (phase === "bite") {
-    const shake = Math.sin(t * 28) * 0.08;
-    r.rotation.x = -0.4 + shake;
-    if (pole) pole.rotation.x = 0.35 + shake;
+    const shake = Math.sin(t * 26) * 0.1;
+    r.rotation.x = -0.35 + shake;
+    if (rod) rod.rotation.x = -0.18 + shake;
     if (line) line.visible = true;
   } else if (phase === "reel") {
-    r.rotation.x = -0.7 + Math.sin(t * 16) * 0.12;
-    l.rotation.x = -0.25;
-    if (pole) pole.rotation.x = 0.2;
+    r.rotation.x = -0.55 + Math.sin(t * 14) * 0.14;
+    l.rotation.x = -0.3 + Math.sin(t * 14) * 0.08;
+    if (rod) rod.rotation.x = -0.22;
     if (line) line.visible = true;
   } else {
-    r.rotation.x = 0;
-    l.rotation.x = 0;
-    if (pole) pole.rotation.x = 1.12;
+    r.rotation.x = 0.04 + Math.sin(t * 1.4) * 0.02;
+    l.rotation.x = 0.02;
+    if (rod) rod.rotation.x = 0.05 + Math.sin(t * 1.4) * 0.015;
     if (line) line.visible = false;
   }
 }
