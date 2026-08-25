@@ -12,15 +12,22 @@ function box(w, h, d, color, y = 0) {
   return m;
 }
 
-function cyl(rTop, rBot, h, color, y = 0, seg = 6) {
+function cyl(rTop, rBot, h, color, y = 0, seg = 7) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), mat(color));
   m.position.y = y;
   m.castShadow = true;
   return m;
 }
 
-function sphere(r, color, y = 0, seg = 6) {
+function sphere(r, color, y = 0, seg = 8) {
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, seg), mat(color));
+  m.position.y = y;
+  m.castShadow = true;
+  return m;
+}
+
+function capsule(r, len, color, y = 0) {
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 3, 7), mat(color));
   m.position.y = y;
   m.castShadow = true;
   return m;
@@ -28,133 +35,59 @@ function sphere(r, color, y = 0, seg = 6) {
 
 function pillDecal(scale = 1) {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.07 * scale, 0.12 * scale, 3, 6), mat(C.white));
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.055 * scale, 0.1 * scale, 3, 7), mat(C.white));
   body.rotation.z = Math.PI / 2;
-  const half = new THREE.Mesh(new THREE.SphereGeometry(0.072 * scale, 6, 6, 0, Math.PI), mat(C.pillGreen));
+  const half = new THREE.Mesh(new THREE.SphereGeometry(0.057 * scale, 7, 6, 0, Math.PI), mat(C.pillGreen));
   half.rotation.z = Math.PI / 2;
-  half.position.x = -0.06 * scale;
+  half.position.x = -0.05 * scale;
   g.add(body, half);
   return g;
 }
 
 export const ARCHETYPES = {
-  DEFAULT: {
-    hat: "cap",
-    hatColor: C.clothBlack,
-    shirt: C.white,
-    pants: C.clothBlack,
-    shoes: C.white,
-    extra: "tee",
-  },
-  FISHERMAN: {
-    hat: "bucket",
-    hatColor: C.clothGreen,
-    shirt: C.white,
-    pants: C.clothGreen,
-    shoes: C.clothGreen,
-    extra: "overalls",
-    prop: "rod",
-  },
-  HUNTER: {
-    hat: "beanie",
-    hatColor: C.clothBlack,
-    shirt: C.clothBlack,
-    pants: C.clothBlack,
-    shoes: C.white,
-    extra: "tee",
-    prop: "gun",
-  },
-  HARVESTER: {
-    hat: "cap",
-    hatColor: C.white,
-    shirt: C.white,
-    pants: C.clothGreen,
-    shoes: C.white,
-    extra: "overalls",
-    prop: "axe",
-  },
-  TRADER: {
-    hat: "top",
-    hatColor: C.clothGreen,
-    shirt: C.clothGreen,
-    pants: C.clothGreen,
-    shoes: C.clothBlack,
-    extra: "suit",
-  },
-  PIRATE: {
-    hat: "tricorn",
-    hatColor: C.clothBlack,
-    shirt: C.white,
-    pants: C.clothBlack,
-    shoes: C.clothBlack,
-    extra: "coat",
-  },
-  BUILDER: {
-    hat: "hardhat",
-    hatColor: C.white,
-    shirt: C.clothBlack,
-    pants: C.clothBlack,
-    shoes: C.white,
-    extra: "vest",
-  },
-  SCOUT: {
-    hat: "cap",
-    hatColor: C.clothGreen,
-    shirt: C.clothGreen,
-    pants: C.clothBlack,
-    shoes: C.white,
-    extra: "pack",
-  },
-  CHEF: {
-    hat: "toque",
-    hatColor: C.white,
-    shirt: C.white,
-    pants: C.clothBlack,
-    shoes: C.clothBlack,
-    extra: "apron",
-    prop: "pan",
-  },
-  BEACHGOER: {
-    hat: "straw",
-    hatColor: C.hatStraw,
-    shirt: 0x3f8f55,
-    pants: C.clothGreen,
-    shoes: 0x6b4a28,
-    extra: "hawaii",
-  },
+  DEFAULT: { hat: "cap", hatColor: C.clothBlack, shirt: C.white, pants: C.clothBlack, shoes: C.white, extra: "tee" },
+  FISHERMAN: { hat: "bucket", hatColor: C.clothGreen, shirt: C.white, pants: C.clothGreen, shoes: C.clothGreen, extra: "overalls", prop: "rod" },
+  HUNTER: { hat: "beanie", hatColor: C.clothBlack, shirt: C.clothBlack, pants: C.clothBlack, shoes: C.white, extra: "tee", prop: "gun" },
+  HARVESTER: { hat: "cap", hatColor: C.white, shirt: C.white, pants: C.clothGreen, shoes: C.white, extra: "overalls", prop: "axe" },
+  TRADER: { hat: "top", hatColor: C.clothGreen, shirt: C.clothGreen, pants: C.clothGreen, shoes: C.clothBlack, extra: "suit" },
+  PIRATE: { hat: "tricorn", hatColor: C.clothBlack, shirt: C.white, pants: C.clothBlack, shoes: C.clothBlack, extra: "coat" },
+  BUILDER: { hat: "hardhat", hatColor: C.white, shirt: C.clothBlack, pants: C.clothBlack, shoes: C.white, extra: "vest" },
+  SCOUT: { hat: "cap", hatColor: C.clothGreen, shirt: C.clothGreen, pants: C.clothBlack, shoes: C.white, extra: "pack" },
+  CHEF: { hat: "toque", hatColor: C.white, shirt: C.white, pants: C.clothBlack, shoes: C.clothBlack, extra: "apron", prop: "pan" },
+  BEACHGOER: { hat: "straw", hatColor: C.hatStraw, shirt: 0x3f8f55, pants: C.clothGreen, shoes: 0x6b4a28, extra: "hawaii" },
 };
 
 function makeHat(kind, color) {
   const g = new THREE.Group();
   if (kind === "cap") {
-    g.add(cyl(0.22, 0.24, 0.12, color, 0, 8));
-    const brim = box(0.22, 0.03, 0.16, color);
-    brim.position.set(0, -0.02, 0.16);
+    g.add(cyl(0.2, 0.22, 0.1, color, 0.02, 8));
+    const brim = box(0.2, 0.025, 0.14, color);
+    brim.position.set(0, -0.01, 0.16);
     g.add(brim);
   } else if (kind === "bucket") {
-    g.add(cyl(0.26, 0.2, 0.16, color, 0, 8));
+    g.add(cyl(0.17, 0.22, 0.12, color, 0.05, 8));
+    g.add(cyl(0.3, 0.3, 0.03, color, -0.02, 10));
   } else if (kind === "beanie") {
-    g.add(sphere(0.23, color, 0.02, 8));
+    g.add(sphere(0.21, color, 0.04, 8));
   } else if (kind === "top") {
-    g.add(cyl(0.2, 0.2, 0.22, color, 0.08, 8));
-    g.add(cyl(0.3, 0.3, 0.04, color, -0.04, 8));
+    g.add(cyl(0.17, 0.17, 0.2, color, 0.12, 8));
+    g.add(cyl(0.28, 0.28, 0.035, color, -0.02, 8));
   } else if (kind === "tricorn") {
-    const brim = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.1, 3), mat(color));
+    const brim = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.09, 3), mat(color));
     brim.rotation.y = Math.PI / 6;
-    brim.position.y = 0.02;
+    brim.position.y = 0.04;
     g.add(brim);
-    g.add(sphere(0.18, color, 0.08, 6));
+    g.add(sphere(0.16, color, 0.08, 6));
   } else if (kind === "hardhat") {
-    g.add(sphere(0.24, color, 0.02, 8));
-    g.add(cyl(0.26, 0.26, 0.04, color, -0.06, 8));
+    g.add(sphere(0.22, color, 0.04, 8));
+    g.add(cyl(0.24, 0.24, 0.035, color, -0.04, 8));
   } else if (kind === "toque") {
-    g.add(cyl(0.2, 0.22, 0.28, C.white, 0.1, 8));
-    g.add(cyl(0.24, 0.24, 0.05, C.white, -0.06, 8));
+    g.add(cyl(0.18, 0.2, 0.26, C.white, 0.14, 8));
+    g.add(cyl(0.22, 0.22, 0.045, C.white, -0.03, 8));
   } else if (kind === "straw") {
-    g.add(cyl(0.22, 0.22, 0.1, color, 0.04, 8));
-    g.add(cyl(0.38, 0.38, 0.03, color, -0.04, 10));
-    const band = cyl(0.23, 0.23, 0.04, C.clothBlack, 0, 8);
-    g.add(band);
+    g.add(cyl(0.2, 0.2, 0.09, color, 0.05, 8));
+    g.add(cyl(0.36, 0.36, 0.025, color, -0.02, 10));
+    g.add(cyl(0.21, 0.21, 0.03, C.clothBlack, 0.02, 8));
   }
   return g;
 }
@@ -162,27 +95,27 @@ function makeHat(kind, color) {
 function makeProp(kind) {
   const g = new THREE.Group();
   if (kind === "rod") {
-    const pole = cyl(0.02, 0.025, 1.35, 0x3a2a18, 0, 5);
-    pole.rotation.z = 0.35;
-    pole.position.set(0.15, 0.35, 0.05);
+    const pole = cyl(0.015, 0.02, 1.45, 0x3a2a18, 0, 5);
+    pole.rotation.z = 0.42;
+    pole.position.set(0.18, 0.42, 0.04);
     g.add(pole);
-    const reel = sphere(0.05, C.clothBlack, 0);
-    reel.position.set(0.08, -0.05, 0.06);
+    const reel = sphere(0.045, C.clothBlack);
+    reel.position.set(0.1, -0.02, 0.05);
     g.add(reel);
   } else if (kind === "gun") {
-    const stock = box(0.08, 0.08, 0.55, 0x3a3a38);
-    stock.position.set(0.12, 0.05, 0.18);
+    const stock = box(0.07, 0.07, 0.58, 0x3a3a38);
+    stock.position.set(0.1, 0.02, 0.2);
     g.add(stock);
   } else if (kind === "axe") {
-    const handle = cyl(0.025, 0.03, 0.7, 0x6a4a2d, 0, 5);
-    handle.rotation.z = -0.6;
-    handle.position.set(0.18, 0.2, 0.04);
-    const head = box(0.22, 0.12, 0.06, 0x8a8d88);
-    head.position.set(0.38, 0.48, 0.04);
+    const handle = cyl(0.02, 0.025, 0.72, 0x6a4a2d, 0, 5);
+    handle.rotation.z = -0.55;
+    handle.position.set(0.16, 0.22, 0.03);
+    const head = box(0.2, 0.11, 0.05, 0x8a8d88);
+    head.position.set(0.36, 0.5, 0.03);
     g.add(handle, head);
   } else if (kind === "pan") {
-    const pan = cyl(0.16, 0.14, 0.04, C.clothBlack, 0, 8);
-    pan.position.set(0.28, 0.02, 0.12);
+    const pan = cyl(0.15, 0.13, 0.035, C.clothBlack, 0, 8);
+    pan.position.set(0.26, 0.0, 0.1);
     g.add(pan);
   }
   return g;
@@ -195,137 +128,151 @@ export function createCharacter(archetype = "DEFAULT", opts = {}) {
   root.userData.archetype = archetype;
 
   const hips = new THREE.Group();
-  hips.position.y = 1.02;
-  const torso = box(0.4, 0.58, 0.24, spec.shirt, 0.46);
-  const pelvis = box(0.36, 0.16, 0.22, spec.pants, 0.06);
+  hips.position.y = 0.56;
+
+  const torso = capsule(0.16, 0.38, spec.shirt, 0.48);
+  torso.scale.set(1.15, 1, 0.85);
+  const pelvis = box(0.32, 0.14, 0.2, spec.pants, 0.08);
   hips.add(torso, pelvis);
 
   if (spec.extra === "overalls") {
-    const bib = box(0.28, 0.34, 0.02, spec.pants);
-    bib.position.set(0, 0.42, 0.15);
+    const bib = box(0.22, 0.28, 0.02, spec.pants);
+    bib.position.set(0, 0.46, 0.15);
     hips.add(bib);
+    const strapL = box(0.035, 0.28, 0.02, spec.pants);
+    strapL.position.set(-0.09, 0.58, 0.15);
+    const strapR = strapL.clone();
+    strapR.position.x = 0.09;
+    hips.add(strapL, strapR);
   }
   if (spec.extra === "suit") {
-    const lapel = box(0.4, 0.5, 0.02, spec.shirt);
-    lapel.position.set(0, 0.4, 0.15);
-    hips.add(lapel);
+    const jacket = box(0.4, 0.48, 0.26, spec.shirt, 0.42);
+    hips.add(jacket);
+    const tie = box(0.04, 0.16, 0.02, C.white);
+    tie.position.set(0, 0.5, 0.14);
+    hips.add(tie);
   }
   if (spec.extra === "coat") {
-    const coat = box(0.58, 0.85, 0.36, C.clothBlack, 0.28);
+    const coat = box(0.5, 0.82, 0.32, C.clothBlack, 0.28);
     hips.add(coat);
+    const shirt = box(0.22, 0.22, 0.04, C.white);
+    shirt.position.set(0, 0.52, 0.17);
+    hips.add(shirt);
   }
   if (spec.extra === "apron") {
-    const apron = box(0.34, 0.5, 0.02, C.white);
-    apron.position.set(0, 0.18, 0.15);
+    const apron = box(0.28, 0.48, 0.02, C.white);
+    apron.position.set(0, 0.22, 0.15);
     hips.add(apron);
   }
   if (spec.extra === "vest") {
-    const vest = box(0.48, 0.36, 0.3, C.clothGreen, 0.38);
+    const vest = box(0.4, 0.3, 0.26, C.clothGreen, 0.42);
     hips.add(vest);
+    const belt = box(0.28, 0.08, 0.14, 0x4a3a22);
+    belt.position.set(0, 0.22, 0.12);
+    hips.add(belt);
   }
   if (spec.extra === "pack") {
-    const pack = box(0.3, 0.32, 0.14, 0x3a4a32);
-    pack.position.set(0, 0.42, -0.22);
+    const pack = box(0.26, 0.28, 0.12, 0x3a4a32);
+    pack.position.set(0, 0.46, -0.2);
     hips.add(pack);
   }
+  if (spec.extra === "hawaii") {
+    for (let i = 0; i < 5; i++) {
+      const flower = sphere(0.03, i % 2 ? 0xe8d36a : 0xf2f4ee, 0);
+      flower.position.set(-0.1 + (i % 3) * 0.1, 0.42 + (i % 2) * 0.1, 0.15);
+      hips.add(flower);
+    }
+  }
 
-  const decal = pillDecal(spec.extra === "tee" || spec.extra === "hawaii" ? 1.15 : 0.9);
-  decal.position.set(0.08, 0.48, 0.16);
+  const decal = pillDecal(spec.extra === "tee" || spec.extra === "hawaii" ? 1.2 : 0.85);
+  decal.position.set(0.07, 0.5, 0.155);
   hips.add(decal);
 
-  const neck = cyl(0.07, 0.08, 0.2, C.skin, 0.86, 6);
+  const neck = cyl(0.055, 0.06, 0.16, C.skin, 0.78, 6);
   hips.add(neck);
 
   const head = new THREE.Group();
-  head.position.y = 1.14;
-  const skull = box(0.34, 0.5, 0.3, C.skin, 0.12);
-  skull.scale.set(0.95, 1.22, 0.9);
+  head.position.y = 1.02;
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 7), mat(C.skin));
+  skull.scale.set(0.95, 1.22, 0.92);
+  skull.position.y = 0.1;
+  skull.castShadow = true;
   head.add(skull);
-  const chin = box(0.2, 0.12, 0.16, C.skinShadow, -0.16);
-  head.add(chin);
+  const jaw = sphere(0.12, C.skinShadow, -0.08, 7);
+  jaw.scale.set(1.05, 0.7, 0.9);
+  head.add(jaw);
 
   const makeEye = (x) => {
     const eye = new THREE.Group();
-    const white = sphere(0.11, C.white, 0, 8);
-    const pupil = sphere(0.04, C.black, 0, 6);
-    pupil.position.z = 0.085;
+    const white = sphere(0.092, C.white, 0, 8);
+    white.scale.set(1, 1.08, 0.88);
+    const pupil = sphere(0.034, C.black, 0, 6);
+    pupil.position.z = 0.07;
     eye.add(white, pupil);
-    eye.position.set(x, 0.16, 0.18);
+    eye.position.set(x, 0.13, 0.175);
     return eye;
   };
-  head.add(makeEye(-0.1), makeEye(0.1));
+  head.add(makeEye(-0.075), makeEye(0.075));
 
-  const nose = box(0.06, 0.07, 0.08, C.skinShadow);
-  nose.position.set(0, 0.04, 0.18);
+  const brow = box(0.22, 0.025, 0.04, C.skinShadow);
+  brow.position.set(0, 0.2, 0.14);
+  head.add(brow);
+  const nose = box(0.045, 0.055, 0.06, C.skinShadow);
+  nose.position.set(0, 0.05, 0.175);
   head.add(nose);
-  const mouth = box(0.12, 0.025, 0.02, 0x5a4030);
-  mouth.position.set(0, -0.06, 0.17);
+  const mouth = box(0.09, 0.018, 0.02, 0x5a4030);
+  mouth.position.set(0, -0.03, 0.165);
   head.add(mouth);
 
   if (archetype === "TRADER") {
-    const beard = box(0.16, 0.16, 0.08, 0x3a3024);
-    beard.position.set(0, -0.18, 0.12);
+    const beard = box(0.12, 0.14, 0.06, 0x3a3024);
+    beard.position.set(0, -0.14, 0.1);
     head.add(beard);
   }
   if (archetype === "PIRATE") {
-    const beard = box(0.2, 0.12, 0.08, 0x4a4034);
-    beard.position.set(0, -0.18, 0.12);
+    const beard = box(0.16, 0.1, 0.06, 0x4a4034);
+    beard.position.set(0, -0.14, 0.1);
     head.add(beard);
   }
   if (archetype === "BEACHGOER") {
-    const glasses = box(0.28, 0.06, 0.08, C.clothBlack);
-    glasses.position.set(0, 0.14, 0.18);
+    const glasses = box(0.24, 0.05, 0.07, C.clothBlack);
+    glasses.position.set(0, 0.12, 0.17);
     head.add(glasses);
   }
 
   const hat = makeHat(spec.hat, spec.hatColor);
-  hat.position.y = 0.36;
+  hat.position.y = 0.3;
   head.add(hat);
   hips.add(head);
 
-  function limb(len, thick, color) {
-    return box(thick, len, thick, color, -len / 2);
+  function arm(side) {
+    const g = new THREE.Group();
+    g.position.set(side * 0.22, 0.64, 0);
+    const sleeveColor = spec.extra === "suit" || spec.extra === "coat" ? spec.shirt : C.skin;
+    const upper = capsule(0.045, 0.28, sleeveColor, -0.18);
+    const fore = capsule(0.04, 0.26, C.skin, -0.5);
+    const hand = sphere(0.05, C.skin, -0.7, 6);
+    g.add(upper, fore, hand);
+    return g;
   }
-
-  const lArm = new THREE.Group();
-  lArm.position.set(-0.28, 0.66, 0);
-  const lUpper = limb(0.46, 0.08, spec.extra === "suit" || spec.extra === "coat" ? spec.shirt : C.skin);
-  const lFore = limb(0.42, 0.07, C.skin);
-  lFore.position.y = -0.46;
-  lArm.add(lUpper, lFore);
-  const lHand = sphere(0.06, C.skin, -0.9, 5);
-  lArm.add(lHand);
-
-  const rArm = new THREE.Group();
-  rArm.position.set(0.28, 0.66, 0);
-  const rUpper = limb(0.46, 0.08, spec.extra === "suit" || spec.extra === "coat" ? spec.shirt : C.skin);
-  const rFore = limb(0.42, 0.07, C.skin);
-  rFore.position.y = -0.46;
-  rArm.add(rUpper, rFore);
-  const rHand = sphere(0.06, C.skin, -0.9, 5);
-  rArm.add(rHand);
-
-  if (spec.prop) {
-    const prop = makeProp(spec.prop);
-    rArm.add(prop);
-  }
-
+  const lArm = arm(-1);
+  const rArm = arm(1);
+  if (spec.prop) rArm.add(makeProp(spec.prop));
   hips.add(lArm, rArm);
 
-  const lLeg = new THREE.Group();
-  lLeg.position.set(-0.11, 0.02, 0);
-  lLeg.add(limb(0.62, 0.11, spec.pants));
-  const lShoe = box(0.13, 0.07, 0.22, spec.shoes);
-  lShoe.position.set(0, -0.66, 0.03);
-  lLeg.add(lShoe);
-
-  const rLeg = new THREE.Group();
-  rLeg.position.set(0.11, 0.02, 0);
-  rLeg.add(limb(0.62, 0.11, spec.pants));
-  const rShoe = box(0.13, 0.07, 0.22, spec.shoes);
-  rShoe.position.set(0, -0.66, 0.03);
-  rLeg.add(rShoe);
-
+  function leg(side) {
+    const g = new THREE.Group();
+    g.position.set(side * 0.09, 0.04, 0);
+    g.add(capsule(0.055, 0.42, spec.pants, -0.28));
+    const shoe = box(0.11, 0.06, 0.2, spec.shoes);
+    shoe.position.set(0, -0.56, 0.03);
+    const sole = box(0.12, 0.02, 0.21, C.clothBlack);
+    sole.position.set(0, -0.6, 0.03);
+    g.add(shoe, sole);
+    return g;
+  }
+  const lLeg = leg(-1);
+  const rLeg = leg(1);
   hips.add(lLeg, rLeg);
   root.add(hips);
 
@@ -339,27 +286,27 @@ export function animateCharacter(root, t, moving = false, fishing = false) {
   const p = root.userData.parts;
   if (!p) return;
   const ph = root.userData.phase || 0;
-  const sway = moving ? 1 : 0.18;
-  const step = Math.sin(t * 7 + ph) * 0.42 * sway;
+  const sway = moving ? 1 : 0.16;
+  const step = Math.sin(t * 6.5 + ph) * 0.38 * sway;
   p.lLeg.rotation.x = step;
   p.rLeg.rotation.x = -step;
-  p.lArm.rotation.x = -step * 0.8;
-  p.rArm.rotation.x = fishing ? -1.15 + Math.sin(t * 3) * 0.12 : step * 0.8;
-  p.head.rotation.y = Math.sin(t * 0.7 + ph) * 0.08;
-  p.hips.position.y = 1.02 + Math.abs(Math.sin(t * 7 + ph)) * (moving ? 0.04 : 0.01);
+  p.lArm.rotation.x = -step * 0.75;
+  p.rArm.rotation.x = fishing ? -1.05 + Math.sin(t * 2.6) * 0.1 : step * 0.75;
+  p.head.rotation.y = Math.sin(t * 0.6 + ph) * 0.1;
+  p.hips.position.y = 0.56 + Math.abs(Math.sin(t * 6.5 + ph)) * (moving ? 0.035 : 0.01);
 }
 
 export function createFirstPersonArms(rodEquipped) {
   const g = new THREE.Group();
   if (rodEquipped) {
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.12), mat(C.skin));
-    grip.position.set(0.22, -0.18, -0.38);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 1.55, 5), mat(0x3a2a18));
-    pole.position.set(0.28, -0.02, -0.82);
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.1), mat(C.skin));
+    grip.position.set(0.2, -0.16, -0.36);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.014, 1.55, 5), mat(0x3a2a18));
+    pole.position.set(0.26, 0.0, -0.82);
     pole.rotation.x = 1.18;
-    pole.rotation.z = -0.22;
-    const reel = new THREE.Mesh(new THREE.SphereGeometry(0.03, 5, 5), mat(C.clothBlack));
-    reel.position.set(0.24, -0.14, -0.46);
+    pole.rotation.z = -0.2;
+    const reel = new THREE.Mesh(new THREE.SphereGeometry(0.028, 5, 5), mat(C.clothBlack));
+    reel.position.set(0.22, -0.12, -0.44);
     g.add(grip, pole, reel);
   }
   g.name = "fp-arms";

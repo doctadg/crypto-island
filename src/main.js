@@ -53,10 +53,10 @@ const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 4
 camera.rotation.order = "YXZ";
 camera.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
 
-const hemi = new THREE.HemisphereLight(0xb9d4e8, 0x6a6048, 0.95);
+const hemi = new THREE.HemisphereLight(0xc5dceb, 0x6a6550, 1.05);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff1d0, 0.85);
-sun.position.set(-40, 55, 18);
+const sun = new THREE.DirectionalLight(0xfff3d6, 1.05);
+sun.position.set(-48, 62, 22);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.camera.left = -50;
