@@ -44,35 +44,33 @@ function n2(x, z) {
 export function heightAt(x, z) {
   const r = Math.hypot(x, z);
   if (r > ISLAND_R + 8) return -0.35;
-  const ang = Math.atan2(x, z);
 
-  // east beach shelf
   const beach = x > 10 && z > -4 && z < 22 && r < ISLAND_R + 4;
-  if (beach && r > 28) return 0.18 + Math.max(0, (34 - r) * 0.05);
+  if (beach && r > 26) return 0.16 + Math.max(0, (32 - r) * 0.035);
 
-  if (r > ISLAND_R + 1.5) return -0.2;
+  if (r > ISLAND_R + 1.2) return -0.2;
 
-  // rim drop
-  let h = 1.15;
-  if (r > 32) h = 0.35 + (ISLAND_R + 1.5 - r) * 0.22;
-  else if (r > 22) h = 1.15 + (32 - r) * 0.08;
-  else if (r > 10) h = 1.95 + (22 - r) * 0.12;
-  else h = 3.35 + (10 - r) * 0.08;
+  const t = Math.max(0, 1 - r / (ISLAND_R + 0.4));
+  const eased = t * t * (3 - 2 * t);
+  let h = 0.26 + eased * 3.05;
 
-  // south-west cliff mass
-  if (x < -8 && z > 6 && r < 36) h += 1.35 + Math.max(0, -x - 10) * 0.06;
-  // north-east forest rise
-  if (x > 2 && z < -6 && r < 30) h += 0.45;
-  // cave notch
-  if (x > 12 && x < 22 && z > 16 && z < 24) h = Math.min(h, 0.85);
+  const cr = Math.hypot(x, z + 1.2);
+  if (cr < 9) h += (1 - cr / 9) * 0.28;
 
-  h += n2(x, z) * 0.22;
+  if (x < -4 && z > 2 && r < 36) {
+    const k = Math.max(0, Math.min(1, (-x - 4) / 20));
+    h += k * 0.42;
+  }
+  if (x > 2 && z < -6 && r < 30) h += 0.16;
+  if (x > 12 && x < 22 && z > 16 && z < 24) h = Math.min(h, 0.62);
+
+  h += n2(x, z) * 0.07;
   return Math.max(0.12, h);
 }
 
 function islandMesh() {
   const g = new THREE.Group();
-  const segs = 96;
+  const segs = 140;
   const size = (ISLAND_R + 6) * 2;
   const geo = new THREE.PlaneGeometry(size, size, segs, segs);
   geo.rotateX(-Math.PI / 2);
@@ -113,23 +111,19 @@ function islandMesh() {
   land.castShadow = true;
   g.add(land);
 
-  // stacked slate slabs on the rim — the sheet's cliff language
-  for (let i = 0; i < 70; i++) {
-    const a = (i / 70) * Math.PI * 2 + (i % 3) * 0.04;
-    const r = ISLAND_R - 1.2 - (i % 5) * 0.55;
+  // shoreline rocks only — hang off the water, never form inland walls
+  for (let i = 0; i < 42; i++) {
+    const a = (i / 42) * Math.PI * 2 + (i % 3) * 0.03;
+    const r = ISLAND_R + 0.4 + (i % 4) * 0.35;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
-    // skip the sandy east bite
-    if (x > 18 && z > 2 && z < 20) continue;
-    const y = heightAt(x, z);
-    const w = 3.4 + (i % 4) * 0.7;
-    const d = 2.4 + ((i * 3) % 4) * 0.45;
-    const h = 1.3 + (i % 5) * 0.55 + (x < -6 && z > 4 ? 1.1 : 0);
+    if (x > 16 && z > 0 && z < 22) continue;
+    const w = 1.6 + (i % 3) * 0.45;
+    const d = 1.2 + ((i * 2) % 3) * 0.3;
+    const h = 0.55 + (i % 4) * 0.18;
     const slab = mesh(new THREE.BoxGeometry(w, h, d), i % 2 ? C.rock : C.rockDark);
-    slab.position.set(x, y - h * 0.28, z);
-    slab.rotation.y = a + 0.35;
-    slab.rotation.z = ((i % 5) - 2) * 0.08;
-    slab.rotation.x = ((i % 3) - 1) * 0.06;
+    slab.position.set(x, 0.08, z);
+    slab.rotation.y = a + 0.2;
     g.add(slab);
   }
   return g;

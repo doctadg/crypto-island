@@ -598,10 +598,10 @@ function stepPlayer(dt) {
   camera.position.y += vel.y * dt;
 
   const floor = heightAt(camera.position.x, camera.position.z) + eyeHeight();
-  const grounded = camera.position.y <= floor + 0.08;
+  const grounded = camera.position.y <= floor + 0.1;
   const rise = floor - camera.position.y;
-  if (rise > 0 && rise < 1.35 && vel.y <= 1.2) {
-    camera.position.y += Math.min(rise, dt * 5.4);
+  if (rise > 0 && rise < 0.42 && vel.y <= 0.6) {
+    camera.position.y += Math.min(rise, dt * 8.5);
     vel.y = Math.max(vel.y, 0);
   } else if (camera.position.y < floor) {
     camera.position.y = floor;
