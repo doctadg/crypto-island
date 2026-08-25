@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import { C, SPAWN } from "./game/palette.js";
-import { createWorld, heightAt, zoneAt, INTERACTS } from "./game/world.js";
+import { createWorld, heightAt, zoneAt, INTERACTS, resolveCollision } from "./game/world.js";
 import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game/characters.js";
 import { createEconomy, RODS, kindLabel } from "./game/economy.js";
+import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
+import { createSky, tickSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp } from "./game/atmosphere.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -43,6 +45,10 @@ let arms = null;
 let lastInteract = null;
 let playing = false;
 let bobT = 0;
+let stepAcc = 0;
+let wasGrounded = true;
+let fovSmoothed = 72;
+let lastZone = "";
 const lookSmoothed = { x: 0, y: 0 };
 const mobile = matchMedia("(pointer: coarse)").matches;
 const stick = { active: false, x: 0, y: 0, id: null };
@@ -77,7 +83,20 @@ sun.shadow.camera.bottom = -50;
 scene.add(sun);
 
 const world = createWorld(scene);
+const sky = createSky();
+scene.add(sky);
+const bobber = createBobber();
+scene.add(bobber);
+const splash = createSplash();
+scene.add(splash);
+const catchProp = createCatchProp();
+camera.add(catchProp);
+catchProp.position.set(0.18, -0.12, -0.42);
 refreshArms();
+
+const fill = new THREE.DirectionalLight(0xb7d4e8, 0.28);
+fill.position.set(30, 18, -40);
+scene.add(fill);
 
 function refreshArms() {
   if (arms) camera.remove(arms);
@@ -208,6 +227,7 @@ panel.addEventListener("click", (e) => {
   }
   if (act === "connect") {
     econ.connectPreviewWallet();
+    sfx.ui();
     toast("Preview wallet linked. No real keys.");
     renderShop();
     return;
@@ -216,6 +236,7 @@ panel.addEventListener("click", (e) => {
     const res = econ.burnForRod(btn.dataset.id);
     if (!res.ok) toast(res.reason);
     else {
+      sfx.burn();
       toast(`Burned ${res.rod.burn} TOKEN · ${res.rod.name} unlocked`);
       refreshArms();
     }
@@ -264,6 +285,15 @@ function setCastUI(phase, label, fill) {
   castFill.style.width = `${Math.max(0, Math.min(100, fill))}%`;
 }
 
+function castPoint() {
+  const dir = new THREE.Vector3(0, -0.18, -1).applyEuler(camera.rotation);
+  return {
+    x: camera.position.x + dir.x * 6.2,
+    y: 0.12,
+    z: camera.position.z + dir.z * 6.2,
+  };
+}
+
 function showCatch(item) {
   if (!catchCard) return;
   document.getElementById("catch-rarity").textContent = item.rarity.toUpperCase();
@@ -271,6 +301,8 @@ function showCatch(item) {
   document.getElementById("catch-kind").textContent = kindLabel(item.kind);
   catchCard.classList.remove("hidden");
   catchTimer = 2.8;
+  catchProp.visible = true;
+  sfx.catch(item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "Epic");
 }
 
 function beginCast() {
@@ -286,28 +318,46 @@ function beginCast() {
     toast(gate.reason);
     return;
   }
+  const pt = castPoint();
   fishing = {
     t: 0,
     phase: "cast",
     zone: zone.id,
     window: 0.85 + Math.random() * 0.45,
     biteAt: 1.25 + Math.random() * 1.7,
+    bx: pt.x,
+    bz: pt.z,
   };
+  sfx.cast();
   setCastUI("cast", "THROWING LINE", 12);
+}
+
+function placeBobber(t) {
+  if (!fishing) {
+    bobber.visible = false;
+    return;
+  }
+  const bob = Math.sin(t * 3.2) * 0.05;
+  bobber.position.set(fishing.bx, 0.14 + bob, fishing.bz);
+  bobber.visible = fishing.phase !== "cast" || fishing.t > 0.28;
 }
 
 function tickFishing(dt) {
   if (!fishing) {
     poseFishingArms(arms, "idle", 0);
+    bobber.visible = false;
     return;
   }
   fishing.t += dt;
   poseFishingArms(arms, fishing.phase, fishing.t);
+  placeBobber(performance.now() / 1000);
   if (fishing.phase === "cast") {
     setCastUI("cast", "THROWING LINE", (fishing.t / 0.42) * 100);
     if (fishing.t >= 0.42) {
       fishing.phase = "wait";
       fishing.t = 0;
+      burstSplash(splash, fishing.bx, 0.12, fishing.bz);
+      sfx.splash();
       setCastUI("wait", "WAITING FOR A BITE", 0);
     }
   } else if (fishing.phase === "wait") {
@@ -315,6 +365,8 @@ function tickFishing(dt) {
     if (fishing.t >= fishing.biteAt) {
       fishing.phase = "bite";
       fishing.t = 0;
+      burstSplash(splash, fishing.bx, 0.12, fishing.bz);
+      sfx.bite();
       setCastUI("bite", "BITE · CLICK / F", 100);
       toast("Bite! Reel now.");
     }
@@ -322,8 +374,10 @@ function tickFishing(dt) {
     setCastUI("bite", "BITE · CLICK / F", (1 - fishing.t / fishing.window) * 100);
     if (fishing.t > fishing.window) {
       fishing = null;
+      bobber.visible = false;
       castMeter.classList.add("hidden");
       poseFishingArms(arms, "idle", 0);
+      sfx.miss();
       toast("It got away.");
     }
   } else if (fishing.phase === "reel") {
@@ -331,6 +385,7 @@ function tickFishing(dt) {
     if (fishing.t >= 0.55) {
       const zone = fishing.zone;
       fishing = null;
+      bobber.visible = false;
       castMeter.classList.add("hidden");
       poseFishingArms(arms, "idle", 0);
       const res = econ.rollCatch(zone);
@@ -353,6 +408,7 @@ function reel() {
   if (fishing.phase === "bite") {
     fishing.phase = "reel";
     fishing.t = 0;
+    sfx.reel();
     setCastUI("reel", "REELING", 0);
   }
 }
@@ -374,6 +430,10 @@ function updatePrompt() {
   }
   const zone = zoneAt(p.x, p.z);
   zoneEl.textContent = zone.label;
+  if (zone.label !== lastZone) {
+    lastZone = zone.label;
+    if (playing && lastZone !== "ISLAND PATH") toast(lastZone);
+  }
   if (panelOpen) {
     promptEl.textContent = "";
     return;
@@ -392,8 +452,8 @@ function applyLook(dx, dy) {
 function stepPlayer(dt) {
   const groundedY = heightAt(camera.position.x, camera.position.z);
   const onWater = groundedY < 0.22;
-  const sprint = keys.ShiftLeft || keys.ShiftRight;
-  const speed = (sprint ? 8.4 : 5.1) * (crouch ? 0.42 : 1) * (onWater ? 0.5 : 1) * (fishing ? 0.35 : 1);
+  const sprint = !!(keys.ShiftLeft || keys.ShiftRight);
+  const speed = (sprint ? 8.4 : 5.1) * (crouch ? 0.42 : 1) * (onWater ? 0.48 : 1) * (fishing ? 0.32 : 1);
 
   wish.set(0, 0, 0);
   if (keys.KeyW || keys.ArrowUp) wish.z -= 1;
@@ -406,38 +466,69 @@ function stepPlayer(dt) {
   }
   if (wish.lengthSq() > 1) wish.normalize();
   wish.applyAxisAngle(tmp.set(0, 1, 0), look.x);
-  const accel = 12;
+  const accel = onWater ? 8 : 13;
   vel.x += (wish.x * speed - vel.x) * Math.min(1, dt * accel);
   vel.z += (wish.z * speed - vel.z) * Math.min(1, dt * accel);
 
   if (keys._jump) {
-    if (camera.position.y <= groundedY + eyeHeight() + 0.1) vel.y = 6.4;
+    if (camera.position.y <= groundedY + eyeHeight() + 0.1) {
+      vel.y = onWater ? 4.2 : 6.4;
+      sfx.jump();
+    }
     keys._jump = false;
   }
-  vel.y -= 20 * dt;
+  vel.y -= (onWater ? 12 : 20) * dt;
 
-  camera.position.x += vel.x * dt;
-  camera.position.z += vel.z * dt;
+  let nx = camera.position.x + vel.x * dt;
+  let nz = camera.position.z + vel.z * dt;
+  const hit = resolveCollision(nx, nz);
+  if (hit.x !== nx || hit.z !== nz) {
+    vel.x *= 0.2;
+    vel.z *= 0.2;
+  }
+  camera.position.x = hit.x;
+  camera.position.z = hit.z;
   camera.position.y += vel.y * dt;
 
   const floor = heightAt(camera.position.x, camera.position.z) + eyeHeight();
+  const grounded = camera.position.y <= floor + 0.04;
   if (camera.position.y < floor) {
     camera.position.y = floor;
     vel.y = 0;
   }
+  if (grounded && !wasGrounded && onWater) {
+    burstSplash(splash, camera.position.x, 0.1, camera.position.z);
+    sfx.splash();
+  }
+  wasGrounded = grounded;
 
   lookSmoothed.x += (look.x - lookSmoothed.x) * Math.min(1, dt * 18);
   lookSmoothed.y += (look.y - lookSmoothed.y) * Math.min(1, dt * 18);
   camera.rotation.y = lookSmoothed.x;
   camera.rotation.x = lookSmoothed.y;
 
-  const moving = Math.hypot(vel.x, vel.z) > 0.35;
-  if (moving) bobT += dt * (sprint ? 11 : 8);
-  const bob = moving ? Math.sin(bobT) * 0.028 : 0;
-  const sway = moving ? Math.cos(bobT * 0.5) * 0.012 : 0;
+  const moving = Math.hypot(vel.x, vel.z) > 0.4 && grounded;
+  if (moving) {
+    bobT += dt * (sprint ? 12 : 8.2);
+    stepAcc += dt;
+    if (stepAcc > (sprint ? 0.32 : 0.44)) {
+      stepAcc = 0;
+      if (onWater) sfx.splash();
+      else sfx.step();
+    }
+  }
+  const bob = moving ? Math.sin(bobT) * 0.032 : 0;
+  const sway = moving ? Math.cos(bobT * 0.5) * 0.014 : 0;
   if (arms) {
     arms.position.set(sway, bob - (crouch ? 0.08 : 0), 0);
     if (!fishing) poseFishingArms(arms, "idle", 0);
+  }
+
+  const wantFov = sprint && moving ? 80 : 72;
+  fovSmoothed += (wantFov - fovSmoothed) * Math.min(1, dt * 6);
+  if (Math.abs(camera.fov - fovSmoothed) > 0.05) {
+    camera.fov = fovSmoothed;
+    camera.updateProjectionMatrix();
   }
   if (compassN) compassN.style.transform = `rotate(${-look.x}rad)`;
 }
@@ -548,6 +639,9 @@ document.getElementById("enter-btn").addEventListener("click", () => {
   boot.classList.add("hidden");
   hud.classList.remove("hidden");
   playing = true;
+  unlockAudio();
+  startAmbience();
+  sfx.ui();
   if (mobile) touch.classList.remove("hidden");
   paintHud();
   if (!mobile) canvas.requestPointerLock();
@@ -567,24 +661,28 @@ function finishLoad() {
   boot.classList.remove("hidden");
 }
 
-const loadLines = [
-  "Waking the lighthouse…",
-  "Stretching lanky fishermen…",
-  "Tuning the catch tables…",
-  "Preview wallet standing by…",
-  "Island is ready.",
-];
-let loadStep = 0;
-const loadTimer = setInterval(() => {
-  loadStep += 1;
-  const p = Math.min(100, loadStep * 22);
-  if (loadFill) loadFill.style.width = `${p}%`;
-  if (loadLine) loadLine.textContent = loadLines[Math.min(loadLines.length - 1, loadStep - 1)];
-  if (p >= 100) {
-    clearInterval(loadTimer);
-    setTimeout(finishLoad, 280);
-  }
-}, 220);
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  finishLoad();
+} else {
+  const loadLines = [
+    "Waking the lighthouse…",
+    "Stretching lanky fishermen…",
+    "Tuning the catch tables…",
+    "Preview wallet standing by…",
+    "Island is ready.",
+  ];
+  let loadStep = 0;
+  const loadTimer = setInterval(() => {
+    loadStep += 1;
+    const p = Math.min(100, loadStep * 22);
+    if (loadFill) loadFill.style.width = `${p}%`;
+    if (loadLine) loadLine.textContent = loadLines[Math.min(loadLines.length - 1, loadStep - 1)];
+    if (p >= 100) {
+      clearInterval(loadTimer);
+      setTimeout(finishLoad, 280);
+    }
+  }, 220);
+}
 
 bindStick();
 paintHud();
@@ -601,15 +699,39 @@ function frame(now) {
   for (const p of world.people) {
     animateCharacter(p, now / 1000, false, p.userData.archetype === "FISHERMAN");
   }
-  world.ocean.position.y = 0.03 + Math.sin(now / 1100) * 0.06;
-  world.ocean.rotation.z = Math.sin(now / 4000) * 0.004;
+  if (world.birds) {
+    for (const b of world.birds) {
+      b.userData.orbit += dt * 0.22;
+      b.position.set(
+        Math.cos(b.userData.orbit) * b.userData.rad,
+        b.userData.h + Math.sin(now / 700 + b.userData.orbit) * 0.4,
+        Math.sin(b.userData.orbit) * b.userData.rad
+      );
+      b.lookAt(0, b.position.y, 0);
+      const flap = Math.sin(now / 140 + b.userData.orbit) * 0.45;
+      if (b.userData.wings) {
+        b.userData.wings[0].rotation.z = flap;
+        b.userData.wings[1].rotation.z = -flap;
+      }
+    }
+  }
+  tickSky(sky, now / 1000);
+  tickSplash(splash, dt);
+  if (world.ocean?.material?.uniforms?.uTime) world.ocean.material.uniforms.uTime.value = now / 1000;
+  if (catchProp.visible) {
+    catchProp.rotation.y += dt * 1.6;
+    catchProp.position.y = -0.12 + Math.sin(now / 220) * 0.02;
+  }
   if (toastTimer > 0) {
     toastTimer -= dt;
     if (toastTimer <= 0) toastEl.classList.add("hidden");
   }
   if (catchTimer > 0) {
     catchTimer -= dt;
-    if (catchTimer <= 0) catchCard?.classList.add("hidden");
+    if (catchTimer <= 0) {
+      catchCard?.classList.add("hidden");
+      catchProp.visible = false;
+    }
   }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

@@ -1,6 +1,27 @@
 import * as THREE from "three";
 import { C, ISLAND_R } from "./palette.js";
 import { createCharacter } from "./characters.js";
+import { createWater } from "./atmosphere.js";
+
+const BLOCKS = [];
+function block(x, z, r) {
+  BLOCKS.push({ x, z, r });
+}
+export function resolveCollision(x, z) {
+  let nx = x;
+  let nz = z;
+  for (const b of BLOCKS) {
+    const dx = nx - b.x;
+    const dz = nz - b.z;
+    const d = Math.hypot(dx, dz);
+    if (d < b.r && d > 0.0001) {
+      const k = b.r / d;
+      nx = b.x + dx * k;
+      nz = b.z + dz * k;
+    }
+  }
+  return { x: nx, z: nz };
+}
 
 const lambert = (color, extras = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...extras });
@@ -109,6 +130,30 @@ function islandMesh() {
     slab.rotation.x = ((i % 3) - 1) * 0.06;
     g.add(slab);
   }
+  return g;
+}
+
+function grassTuft() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 5; i++) {
+    const blade = mesh(new THREE.BoxGeometry(0.04, 0.28 + Math.random() * 0.18, 0.03), i % 2 ? C.grass : C.grassLit, false);
+    blade.position.set((i - 2) * 0.07, 0.16, (i % 2) * 0.05);
+    blade.rotation.z = (i - 2) * 0.12;
+    g.add(blade);
+  }
+  return g;
+}
+
+function seagull() {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({ color: 0xf4f6f2, flatShading: true });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.07, 0.32), mat);
+  const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.16), mat);
+  wingL.position.set(-0.35, 0.02, 0);
+  const wingR = wingL.clone();
+  wingR.position.x = 0.35;
+  g.add(body, wingL, wingR);
+  g.userData.wings = [wingL, wingR];
   return g;
 }
 
@@ -396,12 +441,7 @@ export function createWorld(scene) {
   const root = new THREE.Group();
   root.name = "island";
 
-  const ocean = mesh(new THREE.PlaneGeometry(520, 520, 1, 1), C.ocean, false);
-  ocean.rotation.x = -Math.PI / 2;
-  ocean.position.y = 0.04;
-  ocean.material.transparent = true;
-  ocean.material.opacity = 0.94;
-  ocean.receiveShadow = true;
+  const ocean = createWater();
   root.add(ocean);
   const deep = mesh(new THREE.PlaneGeometry(1100, 1100), C.oceanDeep, false);
   deep.rotation.x = -Math.PI / 2;
@@ -414,6 +454,7 @@ export function createWorld(scene) {
   const peak = heightAt(0, -1.2);
   light.position.set(0, peak, -1.2);
   root.add(light);
+  block(0, -1.2, 3.1);
 
   const climb = stairs(12, 0.18, 0.4);
   climb.position.set(0, peak - 2.05, 3.4);
@@ -423,7 +464,9 @@ export function createWorld(scene) {
   mainDock.position.set(1.6, 0.12, 31.4);
   root.add(mainDock);
   place(root, hut(C.white), -6.8, 22.4, 0.25);
+  block(-6.8, 22.4, 1.8);
   place(root, hut(C.green), 8.6, 21.6, -0.3);
+  block(8.6, 21.6, 1.8);
 
   const northDock = dock(10.5, 1.7);
   northDock.position.set(-27.2, 0.12, 8.0);
@@ -510,6 +553,26 @@ export function createWorld(scene) {
   dirt.rotation.x = -0.08;
   root.add(dirt);
 
+  for (const [x, z] of [
+    [3.2, 18.4], [5.1, 14.2], [-4.4, 16.6], [2.2, 8.8], [-2.6, 11.4],
+    [7.8, 6.2], [-8.2, 9.4], [4.6, -2.2], [-1.8, -6.4], [9.2, -9.6],
+    [1.4, 20.2], [-5.6, 4.2], [11.2, 2.4], [-3.2, 19.5], [6.4, 12.8],
+  ]) {
+    place(root, grassTuft(), x, z);
+  }
+
+  const birds = [];
+  for (let i = 0; i < 5; i++) {
+    const b = seagull();
+    const a = (i / 5) * Math.PI * 2;
+    b.position.set(Math.cos(a) * 22, 9 + (i % 3), Math.sin(a) * 22);
+    b.userData.orbit = a;
+    b.userData.rad = 18 + i * 3;
+    b.userData.h = 8.5 + i * 0.7;
+    root.add(b);
+    birds.push(b);
+  }
+
   const npcs = [
     { type: "TRADER", x: 5.4, z: 22.8, rot: Math.PI },
     { type: "FISHERMAN", x: 2.4, z: 33.6, rot: 0.15 },
@@ -534,7 +597,7 @@ export function createWorld(scene) {
   }
 
   scene.add(root);
-  return { root, ocean, people, lighthouse: light };
+  return { root, ocean, people, lighthouse: light, birds };
 }
 
 export const INTERACTS = [
