@@ -5,7 +5,7 @@ import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game
 import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, SHOP_GEAR, tradeLine, CATCHES } from "./game/economy.js";
 import { iconRod, iconSwap, iconMerch, iconFish, iconStat, iconBoat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
-import { createSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
+import { createSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight, createRipple, burstRipple, tickRipple, createWorldLine, createFightFish } from "./game/atmosphere.js";
 import { createMinimap } from "./game/minimap.js";
 import { questStatus } from "./game/quests.js";
 import { createLife, tickLife, dayPhase } from "./game/life.js";
@@ -34,6 +34,8 @@ const castMeter = document.getElementById("cast-meter");
 const castFill = document.getElementById("cast-fill");
 const castLabel = document.getElementById("cast-label");
 const castPhaseEl = document.getElementById("cast-phase");
+const tensionWrap = document.getElementById("tension-wrap");
+const tensionFill = document.getElementById("tension-fill");
 const catchCard = document.getElementById("catch-card");
 const compassN = document.getElementById("compass-n");
 const touch = document.getElementById("touch");
@@ -103,6 +105,12 @@ const bobber = createBobber();
 scene.add(bobber);
 const splash = createSplash();
 scene.add(splash);
+const ripple = createRipple();
+scene.add(ripple);
+const worldLine = createWorldLine();
+scene.add(worldLine);
+const fightFish = createFightFish();
+scene.add(fightFish);
 const catchProp = createCatchProp();
 camera.add(catchProp);
 catchProp.position.set(0.18, -0.12, -0.42);
@@ -464,12 +472,58 @@ function tryInteract() {
 
 function setCastUI(phase, label, fill) {
   if (!castMeter) return;
-  castMeter.classList.remove("hidden", "bite", "reel");
+  castMeter.classList.remove("hidden", "bite", "reel", "snap");
   if (phase === "bite") castMeter.classList.add("bite");
-  if (phase === "reel") castMeter.classList.add("reel");
+  if (phase === "fight" || phase === "reel") castMeter.classList.add("reel");
+  if (phase === "snap") castMeter.classList.add("snap");
   if (castPhaseEl) castPhaseEl.textContent = phase.toUpperCase();
   castLabel.textContent = label;
   castFill.style.width = `${Math.max(0, Math.min(100, fill))}%`;
+  const fight = phase === "fight";
+  tensionWrap?.classList.toggle("hidden", !fight);
+  if (fight && tensionFill && fishing) tensionFill.style.width = `${Math.max(4, Math.min(100, fishing.tension * 100))}%`;
+}
+
+function endFishing(msg) {
+  fishing = null;
+  bobber.visible = false;
+  worldLine.visible = false;
+  fightFish.visible = false;
+  castMeter.classList.add("hidden");
+  tensionWrap?.classList.add("hidden");
+  poseFishingArms(arms, "idle", 0);
+  if (msg) toast(msg);
+}
+
+function updateWorldLine() {
+  if (!fishing || !worldLine) return;
+  const tip = new THREE.Vector3(0.18, -0.18, -1.35);
+  camera.localToWorld(tip);
+  const pos = worldLine.geometry.attributes.position;
+  pos.setXYZ(0, tip.x, tip.y, tip.z);
+  pos.setXYZ(1, fishing.bx, fishing.by, fishing.bz);
+  pos.needsUpdate = true;
+  worldLine.visible = fishing.phase !== "land";
+}
+
+function showCatch(item) {
+  if (!catchCard) return;
+  document.getElementById("catch-rarity").textContent = item.rarity.toUpperCase();
+  document.getElementById("catch-name").textContent = item.name;
+  const blurb = document.getElementById("catch-blurb");
+  if (blurb) blurb.textContent = item.blurb || "";
+  document.getElementById("catch-kind").textContent = kindLabel(item.kind);
+  const trade = document.getElementById("catch-trade");
+  if (trade) trade.textContent = `${tradeLine(item)}${item.size ? ` · ${item.size} cm` : ""}`;
+  catchCard.classList.remove("hidden");
+  catchTimer = 8;
+  catchProp.visible = true;
+  const s = Math.max(0.7, Math.min(2.4, (item.size || 40) / 40));
+  catchProp.scale.setScalar(s);
+  freeMouse();
+  const rare = item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "Epic";
+  sfx.catch(rare);
+  if (rare) toast(`ISLAND CALL · ${item.name}`);
 }
 
 function castPoint() {
@@ -492,22 +546,6 @@ function lookingAtWater() {
   return { ok: false };
 }
 
-function showCatch(item) {
-  if (!catchCard) return;
-  document.getElementById("catch-rarity").textContent = item.rarity.toUpperCase();
-  document.getElementById("catch-name").textContent = item.name;
-  const blurb = document.getElementById("catch-blurb");
-  if (blurb) blurb.textContent = item.blurb || "";
-  document.getElementById("catch-kind").textContent = kindLabel(item.kind);
-  const trade = document.getElementById("catch-trade");
-  if (trade) trade.textContent = tradeLine(item);
-  catchCard.classList.remove("hidden");
-  catchTimer = 8;
-  catchProp.visible = true;
-  freeMouse();
-  sfx.catch(item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "Epic");
-}
-
 function beginCast() {
   if (fishing || panelOpen || !playing || sailing) return;
   if (catchCard && !catchCard.classList.contains("hidden")) return;
@@ -519,8 +557,7 @@ function beginCast() {
   const zone = zoneAt(aim.x, aim.z);
   const here = zoneAt(camera.position.x, camera.position.z);
   const useZone = zone.fish ? zone : here;
-  const waterNear = heightAt(aim.x, aim.z) < 0.35;
-  if (!waterNear) {
+  if (heightAt(aim.x, aim.z) >= 0.35) {
     toast("Look at the water to cast.");
     return;
   }
@@ -529,88 +566,172 @@ function beginCast() {
     toast(gate.reason);
     return;
   }
+  const from = camera.position.clone();
   fishing = {
     t: 0,
     phase: "cast",
     zone: useZone.id,
-    window: 0.85 + Math.random() * 0.45,
-    biteAt: 1.25 + Math.random() * 1.7,
-    bx: aim.x,
-    bz: aim.z,
+    window: 0.9 + Math.random() * 0.5,
+    biteAt: 1.1 + Math.random() * 2.2,
+    fromX: from.x,
+    fromY: from.y - 0.2,
+    fromZ: from.z,
+    tx: aim.x,
+    tz: aim.z,
+    bx: from.x,
+    by: from.y,
+    bz: from.z,
+    tension: 0.28,
+    pull: 0.55 + Math.random() * 0.7,
+    dir: Math.random() * Math.PI * 2,
+    progress: 0,
+    shake: 0,
+    sizeHint: 0.7 + Math.random() * 1.6,
   };
   sfx.cast();
-  setCastUI("cast", "F to Cast", 12);
+  setCastUI("cast", "F to Cast", 8);
 }
 
-function placeBobber(t) {
+function placeBobber(tNow) {
   if (!fishing) {
     bobber.visible = false;
     return;
   }
-  const bob = Math.sin(t * 3.2) * 0.05;
-  const tNow = performance.now() / 1000;
   const wy = waterHeight(fishing.bx, fishing.bz, tNow);
-  bobber.position.set(fishing.bx, wy + 0.08 + bob, fishing.bz);
-  bobber.rotation.z = Math.sin(tNow * 2.1) * 0.18;
-  bobber.rotation.x = Math.cos(tNow * 1.6) * 0.12;
-  bobber.visible = fishing.phase !== "cast" || fishing.t > 0.28;
+  if (fishing.phase === "cast") {
+    const k = Math.min(1, fishing.t / 0.55);
+    const ease = k * k * (3 - 2 * k);
+    fishing.bx = fishing.fromX + (fishing.tx - fishing.fromX) * ease;
+    fishing.bz = fishing.fromZ + (fishing.tz - fishing.fromZ) * ease;
+    fishing.by = fishing.fromY + (wy - fishing.fromY) * ease + Math.sin(k * Math.PI) * 2.4;
+    bobber.position.set(fishing.bx, fishing.by, fishing.bz);
+    bobber.visible = k > 0.12;
+  } else if (fishing.phase === "bite" || fishing.phase === "fight") {
+    fishing.by = wy - (fishing.phase === "bite" ? 0.45 : 0.22 + fishing.tension * 0.3);
+    bobber.position.set(fishing.bx, fishing.by, fishing.bz);
+    bobber.visible = fishing.phase === "fight";
+  } else if (fishing.phase === "land") {
+    bobber.visible = false;
+  } else {
+    const bob = Math.sin(tNow * 3.2) * 0.05;
+    fishing.by = wy + 0.08 + bob;
+    bobber.position.set(fishing.bx, fishing.by, fishing.bz);
+    bobber.rotation.z = Math.sin(tNow * 2.1) * 0.18;
+    bobber.visible = true;
+  }
 }
 
 function tickFishing(dt) {
   if (!fishing) {
     poseFishingArms(arms, "idle", 0);
     bobber.visible = false;
+    worldLine.visible = false;
     return;
   }
   fishing.t += dt;
-  poseFishingArms(arms, fishing.phase, fishing.t);
-  placeBobber(performance.now() / 1000);
+  const tNow = performance.now() / 1000;
+  poseFishingArms(arms, fishing.phase, fishing.phase === "fight" ? fishing.tension : fishing.t);
+  placeBobber(tNow);
+  updateWorldLine();
+
   if (fishing.phase === "cast") {
-    setCastUI("cast", "F to Cast", (fishing.t / 0.42) * 100);
-    if (fishing.t >= 0.42) {
+    setCastUI("cast", "F to Cast", (fishing.t / 0.55) * 100);
+    if (fishing.t >= 0.55) {
       fishing.phase = "wait";
       fishing.t = 0;
+      fishing.bx = fishing.tx;
+      fishing.bz = fishing.tz;
       burstSplash(splash, fishing.bx, 0.12, fishing.bz);
+      burstRipple(ripple, fishing.bx, 0.04, fishing.bz);
       sfx.splash();
       setCastUI("wait", "F to Reel · waiting", 0);
     }
   } else if (fishing.phase === "wait") {
+    if (fishing.t % 0.9 < dt) burstRipple(ripple, fishing.bx, 0.03, fishing.bz);
     setCastUI("wait", "F to Reel · waiting", (fishing.t / fishing.biteAt) * 100);
     if (fishing.t >= fishing.biteAt) {
       fishing.phase = "bite";
       fishing.t = 0;
+      fishing.shake = 0.18;
       burstSplash(splash, fishing.bx, 0.12, fishing.bz);
       sfx.bite();
       setCastUI("bite", "F to Reel", 100);
       toast("F to Reel");
     }
   } else if (fishing.phase === "bite") {
+    fishing.shake *= 0.92;
     setCastUI("bite", "F to Reel", (1 - fishing.t / fishing.window) * 100);
     if (fishing.t > fishing.window) {
-      fishing = null;
-      bobber.visible = false;
-      castMeter.classList.add("hidden");
-      poseFishingArms(arms, "idle", 0);
       sfx.miss();
-      toast("It got away.");
+      endFishing("It got away.");
     }
-  } else if (fishing.phase === "reel") {
-    setCastUI("reel", "F to Reel", (fishing.t / 0.55) * 100);
-    if (fishing.t >= 0.55) {
-      const zone = fishing.zone;
-      fishing = null;
-      bobber.visible = false;
-      castMeter.classList.add("hidden");
-      poseFishingArms(arms, "idle", 0);
-      const res = econ.rollCatch(zone);
-      if (!res.ok) toast(res.reason);
-      else {
-        paintHud();
-        showCatch(res.item);
-        toast(`${res.item.rarity} · ${res.item.name}`);
-      }
+  } else if (fishing.phase === "fight") {
+    fishing.dir += (Math.random() - 0.5) * dt * 3.2;
+    const holding = !!(keys.KeyF);
+    if (holding) {
+      fishing.progress += dt * (0.34 + (1 - fishing.tension) * 0.22);
+      fishing.tension += dt * (0.18 + fishing.pull * 0.12);
+    } else {
+      fishing.tension -= dt * 0.22;
+      fishing.progress -= dt * 0.05;
     }
+    fishing.tension += Math.sin(tNow * 7) * dt * 0.08 * fishing.pull;
+    fishing.tension = Math.max(0.08, Math.min(1.15, fishing.tension));
+    const pull = fishing.pull * (0.4 + fishing.tension);
+    vel.x += Math.cos(fishing.dir) * pull * dt * 3.4;
+    vel.z += Math.sin(fishing.dir) * pull * dt * 3.4;
+    fishing.shake = 0.06 + fishing.tension * 0.16;
+    if (fishing.t % 0.35 < dt) burstRipple(ripple, fishing.bx, 0.03, fishing.bz);
+    fightFish.visible = fishing.tension > 0.55;
+    if (fightFish.visible) {
+      fightFish.position.set(fishing.bx + Math.sin(tNow * 8) * 0.4, fishing.by - 0.15, fishing.bz + Math.cos(tNow * 6) * 0.4);
+      fightFish.scale.setScalar(0.7 + fishing.sizeHint * 0.5);
+      fightFish.rotation.y = tNow * 4;
+    }
+    setCastUI("fight", holding ? "HOLD F · don’t snap it" : "HOLD F to reel", fishing.progress * 100);
+    if (fishing.tension > 1) {
+      sfx.miss();
+      endFishing("Line snapped.");
+    } else if (fishing.progress >= 1) {
+      startLand();
+    }
+  } else if (fishing.phase === "land") {
+    const k = Math.min(1, fishing.t / 0.7);
+    const wx = camera.position.x;
+    const wz = camera.position.z;
+    fishing.bx = fishing.tx + (wx - fishing.tx) * k;
+    fishing.bz = fishing.tz + (wz - fishing.tz) * k;
+    fishing.by = waterHeight(fishing.bx, fishing.bz, tNow) + Math.sin(k * Math.PI) * 2.1 + k * 0.6;
+    fightFish.visible = true;
+    fightFish.position.set(fishing.bx, fishing.by, fishing.bz);
+    fightFish.rotation.z = -k * 1.2;
+    setCastUI("land", "FISH ON", 100);
+    if (k >= 1) finishCatch();
   }
+}
+
+function startLand() {
+  fishing.phase = "land";
+  fishing.t = 0;
+  fishing.tx = fishing.bx;
+  fishing.tz = fishing.bz;
+  burstSplash(splash, fishing.bx, 0.2, fishing.bz);
+  sfx.reel();
+}
+
+function finishCatch() {
+  const zone = fishing.zone;
+  const sizeHint = fishing.sizeHint;
+  endFishing();
+  const res = econ.rollCatch(zone);
+  if (!res.ok) {
+    toast(res.reason);
+    return;
+  }
+  if (res.item && sizeHint) res.item.size = Math.max(res.item.size || 20, Math.round(sizeHint * 48));
+  paintHud();
+  showCatch(res.item);
+  toast(`${res.item.rarity} · ${res.item.name}${res.item.size ? ` · ${res.item.size}cm` : ""}`);
 }
 
 function reel() {
@@ -620,10 +741,13 @@ function reel() {
     return;
   }
   if (fishing.phase === "bite") {
-    fishing.phase = "reel";
+    fishing.phase = "fight";
     fishing.t = 0;
+    fishing.tension = 0.34;
+    fishing.progress = 0;
     sfx.reel();
-    setCastUI("reel", "F to Reel", 0);
+    setCastUI("fight", "HOLD F to reel", 0);
+    burstSplash(splash, fishing.bx, 0.12, fishing.bz);
   }
 }
 
@@ -666,7 +790,12 @@ function updatePrompt() {
   }
   let next = "";
   if (!panelOpen) {
-    if (fishing) next = fishing.phase === "cast" ? "F to Cast" : "F to Reel";
+    if (fishing) {
+      if (fishing.phase === "cast") next = "F to Cast";
+      else if (fishing.phase === "fight") next = "HOLD F · let off if it screams";
+      else if (fishing.phase === "land") next = "FISH ON";
+      else next = "F to Reel";
+    }
     else if (lastInteract) next = lastInteract.label;
     else if (lookingAtWater().ok && econ.state.equipped !== "none") next = "F to Cast";
   }
@@ -679,6 +808,10 @@ function applyLook(dx, dy) {
   look.y = Math.max(-1.2, Math.min(1.2, look.y));
   camera.rotation.y = look.x;
   camera.rotation.x = look.y;
+  if (fishing?.shake) {
+    camera.rotation.x += (Math.random() - 0.5) * fishing.shake;
+    camera.rotation.y += (Math.random() - 0.5) * fishing.shake * 0.6;
+  }
 }
 
 function startSail(dest, label) {
@@ -823,6 +956,10 @@ function stepPlayer(dt) {
   lookSmoothed.y = look.y;
   camera.rotation.y = look.x;
   camera.rotation.x = look.y;
+  if (fishing?.shake) {
+    camera.rotation.x += (Math.random() - 0.5) * fishing.shake;
+    camera.rotation.y += (Math.random() - 0.5) * fishing.shake * 0.55;
+  }
 
   const moving = Math.hypot(vel.x, vel.z) > 0.4 && grounded;
   if (moving) {
@@ -1066,6 +1203,7 @@ function frame(now) {
     if (lantern?.material) lantern.material.emissiveIntensity = day.night ? 1.4 : 0.22;
   }
   tickSplash(splash, dt);
+  tickRipple(ripple, dt);
   if (world.ocean?.material?.uniforms?.uTime) world.ocean.material.uniforms.uTime.value = tSec;
   if (world.duck) {
     world.duck.position.y = waterHeight(world.duck.position.x, world.duck.position.z, tSec) + 0.1;

@@ -243,6 +243,59 @@ export function tickSplash(splash, dt) {
   }
 }
 
+export function createRipple() {
+  const g = new THREE.Mesh(
+    new THREE.RingGeometry(0.12, 0.28, 18),
+    new THREE.MeshBasicMaterial({ color: 0xe8f6f2, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })
+  );
+  g.rotation.x = -Math.PI / 2;
+  g.visible = false;
+  g.userData.t = 0;
+  g.userData.live = false;
+  return g;
+}
+
+export function burstRipple(ripple, x, y, z) {
+  ripple.position.set(x, y + 0.04, z);
+  ripple.visible = true;
+  ripple.userData.t = 0;
+  ripple.userData.live = true;
+  ripple.scale.setScalar(0.4);
+  ripple.material.opacity = 0.6;
+}
+
+export function tickRipple(ripple, dt) {
+  if (!ripple?.userData.live) return;
+  ripple.userData.t += dt;
+  const k = ripple.userData.t;
+  ripple.scale.setScalar(0.4 + k * 3.6);
+  ripple.material.opacity = Math.max(0, 0.6 - k * 0.7);
+  if (k > 0.9) {
+    ripple.visible = false;
+    ripple.userData.live = false;
+  }
+}
+
+export function createWorldLine() {
+  const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xe8f2ec, transparent: true, opacity: 0.8 }));
+  line.visible = false;
+  line.frustumCulled = false;
+  return line;
+}
+
+export function createFightFish() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.34, 2, 5), new THREE.MeshLambertMaterial({ color: 0x3d8fbf, flatShading: true }));
+  body.rotation.z = Math.PI / 2;
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.16, 4), new THREE.MeshLambertMaterial({ color: 0x2a6a88, flatShading: true }));
+  tail.rotation.z = -Math.PI / 2;
+  tail.position.x = -0.28;
+  g.add(body, tail);
+  g.visible = false;
+  return g;
+}
+
 export function createCatchProp(kind = "fish") {
   const g = new THREE.Group();
   if (kind === "boot") {

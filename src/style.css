@@ -269,6 +269,10 @@ button { font-family: inherit; cursor: pointer; }
 #cast-label { margin-top: 7px; font: 600 11px/1 var(--mono); letter-spacing: 0.12em; }
 .cast-meter.bite .cast-track i { background: #e8c15a; }
 .cast-meter.reel .cast-track i { background: #7de39a; }
+.cast-meter.snap .cast-track i { background: #e35a4a; }
+.tension-wrap { margin-top: 8px; font: 700 10px/1 var(--mono); letter-spacing: 0.14em; color: #e8c15a; }
+.tension-track { height: 10px; margin-top: 4px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.2); overflow: hidden; }
+.tension-track i { display: block; height: 100%; width: 20%; background: linear-gradient(90deg, #2f8a48, #e8c15a, #e35a4a); }
 
 .catch-card {
   position: absolute; left: 50%; top: 16%;

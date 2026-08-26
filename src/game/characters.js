@@ -417,6 +417,18 @@ export function poseFishingArms(arms, phase, t) {
     rig.rotation.x = base.x - 0.28 + Math.sin(t * 13) * 0.05;
     if (reel) reel.rotation.x = t * 14;
     if (line) line.visible = true;
+  } else if (phase === "fight") {
+    const bend = 0.22 + Math.min(0.7, (t || 0));
+    const shake = Math.sin(performance.now() / 40) * 0.08 * bend;
+    rig.rotation.x = base.x - bend + shake;
+    rig.rotation.z = base.z + shake * 0.6;
+    if (reel) reel.rotation.x += 0.4;
+    if (line) line.visible = true;
+    if (arms.userData.pole) arms.userData.pole.rotation.x = bend * 0.35;
+  } else if (phase === "land") {
+    rig.rotation.x = base.x - 0.55;
+    rig.rotation.y = base.y - 0.2;
+    if (line) line.visible = false;
   } else {
     rig.rotation.x = base.x + Math.sin(t * 1.3) * 0.018;
     rig.rotation.y = base.y;
