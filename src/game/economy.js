@@ -1,3 +1,5 @@
+import { EVENT_CATCHES } from "./events.js";
+
 export const RODS = {
   none: { id: "none", name: "No rod", burn: 0, luck: 0, zones: [] },
   basic: {
@@ -153,15 +155,20 @@ export function createEconomy() {
   function canFish(zone) {
     const rod = RODS[state.equipped] || RODS.none;
     if (rod.id === "none") return { ok: false, reason: "Burn TOKEN for a rod at the lighthouse." };
+    if (zone === "EVENT") return { ok: true, rod };
     if (!rod.zones.includes(zone)) return { ok: false, reason: `${rod.name} cannot fish ${zone.replaceAll("_", " ")}.` };
     return { ok: true, rod };
   }
 
-  function rollCatch(zone) {
+  function rollCatch(zone, eventId) {
     const gate = canFish(zone);
     if (!gate.ok) return gate;
     const rod = gate.rod;
-    const pool = CATCHES.filter((c) => c.zones.includes(zone) && ROD_RANK[rod.id] >= ROD_RANK[c.minRod]);
+    let pool = CATCHES.filter((c) => c.zones.includes(zone) && ROD_RANK[rod.id] >= ROD_RANK[c.minRod]);
+    if (eventId) {
+      const extra = EVENT_CATCHES.filter((c) => c.event === eventId && (c.zones.includes(zone) || c.zones.includes("EVENT")));
+      pool = pool.concat(extra);
+    }
     if (!pool.length) return { ok: false, reason: "Nothing bites here." };
     const weighted = pool.map((c) => ({
       c,

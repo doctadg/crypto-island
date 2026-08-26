@@ -416,7 +416,7 @@ export function tickLife(life, ctx) {
   for (const n of life.patrol) {
     const path = n.userData.path;
     if (!path) continue;
-    n.userData.u = (n.userData.u || 0) + dt * 0.08;
+    n.userData.u = (n.userData.u || 0) + dt * (n.userData.eventRun ? 0.22 : 0.08);
     const u = n.userData.u % 1;
     const i = Math.floor(u * path.length);
     const j = (i + 1) % path.length;

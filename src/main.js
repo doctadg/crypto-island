@@ -9,6 +9,7 @@ import { createSky, createBobber, createSplash, burstSplash, tickSplash, createC
 import { createMinimap } from "./game/minimap.js";
 import { questStatus } from "./game/quests.js";
 import { createLife, tickLife, dayPhase } from "./game/life.js";
+import { createEvents, tickEvents, currentEvent, EVENT_CATCHES } from "./game/events.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -101,6 +102,7 @@ scene.add(sky);
 const life = createLife(world.root);
 life.patrol = world.people.filter((p) => p.userData.path);
 life.watcher = world.watcher;
+const islandEvents = createEvents(world.root);
 const bobber = createBobber();
 scene.add(bobber);
 const splash = createSplash();
@@ -329,7 +331,7 @@ function renderBoard() {
 
 function renderBook() {
   const book = econ.state.book || {};
-  const cards = CATCHES.map((c) => {
+  const cards = [...CATCHES, ...EVENT_CATCHES].map((c) => {
     const n = book[c.id] || 0;
     return `<article class="card">
       <div class="art">${n ? iconFish(c.id) : iconFish("old_boot")}</div>
@@ -344,7 +346,7 @@ function renderBook() {
     <button class="close-x" type="button" data-act="close">✕</button>
     <p class="mini">FISH BOOK</p>
     <h2>Catch log</h2>
-    <p class="sub">${Object.keys(book).length}/${CATCHES.length} logged · biggest ${econ.state.biggest || 0} cm · this browser only</p>
+    <p class="sub">${Object.keys(book).length}/${CATCHES.length + EVENT_CATCHES.length} logged · biggest ${econ.state.biggest || 0} cm · this browser only</p>
     <div class="cards">${cards}</div>
   `;
 }
@@ -723,7 +725,7 @@ function finishCatch() {
   const zone = fishing.zone;
   const sizeHint = fishing.sizeHint;
   endFishing();
-  const res = econ.rollCatch(zone);
+  const res = econ.rollCatch(zone, currentEvent()?.id);
   if (!res.ok) {
     toast(res.reason);
     return;
@@ -1184,13 +1186,38 @@ function frame(now) {
   }
   const tSec = now / 1000;
   const day = dayPhase(tSec);
-  const raining = life.weather === "rain" || life.weather === "storm";
-  const foggy = life.weather === "fog" || life.weather === "storm";
-  const rough = life.weather === "storm";
-  tickLife(life, { dt, t: tSec, camera, toast, night: day.night, rough, raining, foggy });
+  const raining = life.weather === "rain" || life.weather === "storm" || currentEvent()?.weather === "storm";
+  const foggy = life.weather === "fog" || life.weather === "storm" || currentEvent()?.weather === "fog";
+  const rough = life.weather === "storm" || currentEvent()?.id === "storm";
+  tickLife(life, { dt, t: tSec, camera, toast, night: day.night || currentEvent()?.id === "blood_moon", rough, raining, foggy });
+  tickEvents(islandEvents, {
+    dt,
+    t: tSec,
+    toast,
+    people: world.people,
+    onStart: (ev) => {
+      life.patrol = world.people.filter((p) => p.userData.path);
+      if (ev.weather) life.weather = ev.weather;
+      const b = document.getElementById("event-banner");
+      if (b) {
+        b.classList.remove("hidden");
+        document.getElementById("event-title").textContent = ev.title;
+        document.getElementById("event-hint").textContent = `${ev.hint} · local preview`;
+      }
+    },
+    onEnd: () => {
+      document.getElementById("event-banner")?.classList.add("hidden");
+    },
+  });
+  if (islandEvents.active) {
+    const left = Math.max(0, islandEvents.active.left);
+    const hint = document.getElementById("event-hint");
+    if (hint) hint.textContent = `${islandEvents.active.hint} · ${Math.ceil(left / 60)}m left · local`;
+  }
   const elev = day.elev;
   const dusk = day.dusk;
-  const skyCol = dusk ? 0xc47a4a : day.night ? 0x152033 : 0x6aa3cc;
+  const evSky = currentEvent()?.sky;
+  const skyCol = evSky || (dusk ? 0xc47a4a : day.night ? 0x152033 : 0x6aa3cc);
   scene.background.setHex(skyCol);
   scene.fog.color.setHex(skyCol);
   scene.fog.density = foggy ? 0.028 : day.night ? 0.016 : 0.011;

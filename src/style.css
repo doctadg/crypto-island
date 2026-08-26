@@ -256,6 +256,32 @@ button { font-family: inherit; cursor: pointer; }
   font: 700 11px/1 var(--mono);
   color: #7de39a;
 }
+.event-banner {
+  position: absolute;
+  left: 50%;
+  top: 72px;
+  transform: translateX(-50%);
+  min-width: 260px;
+  padding: 10px 16px 8px;
+  text-align: center;
+  background: rgba(70, 12, 18, 0.88);
+  border: 1px solid #e8c15a;
+  pointer-events: none;
+  z-index: 10;
+}
+.event-banner b {
+  display: block;
+  font: 800 15px/1 var(--sans);
+  letter-spacing: 0.12em;
+  color: #ffe6a0;
+}
+.event-banner span {
+  display: block;
+  margin-top: 4px;
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.1em;
+  color: #f4f7f2;
+}
 
 .cast-meter {
   position: absolute; left: 50%; bottom: 96px;
