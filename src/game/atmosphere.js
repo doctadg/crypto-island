@@ -116,9 +116,11 @@ export function createWater() {
       uMid: { value: new THREE.Color(0x2f7ea8) },
       uShal: { value: new THREE.Color(0x8fd0dc) },
       uFoam: { value: new THREE.Color(0xf3fbff) },
+      uAmp: { value: 1 },
     },
     vertexShader: `
       uniform float uTime;
+      uniform float uAmp;
       varying vec3 vW;
       varying vec3 vN;
       varying float vMix;
@@ -142,10 +144,10 @@ export function createWater() {
         float r2 = length(p.xz - vec2(118.0, -8.0));
         float mixW = min(clamp((r - 33.2) / 8.5, 0.0, 1.0), clamp((r2 - 22.5) / 7.5, 0.0, 1.0));
         vec3 nAcc = vec3(0.0, 0.0, 0.0);
-        p = gerstner(p, normalize(vec2(0.82, 0.57)), 0.22 * mixW, 18.0, 1.15, 0.42, nAcc);
-        p = gerstner(p, normalize(vec2(-0.35, 0.94)), 0.12 * mixW, 9.5, 1.55, 0.32, nAcc);
-        p = gerstner(p, normalize(vec2(0.2, -0.98)), 0.07 * mixW, 5.2, 1.9, 0.28, nAcc);
-        p = gerstner(p, normalize(vec2(0.95, 0.31)), 0.045 * mixW, 3.1, 2.4, 0.2, nAcc);
+        p = gerstner(p, normalize(vec2(0.82, 0.57)), 0.22 * mixW * uAmp, 18.0, 1.15, 0.42, nAcc);
+        p = gerstner(p, normalize(vec2(-0.35, 0.94)), 0.12 * mixW * uAmp, 9.5, 1.55, 0.32, nAcc);
+        p = gerstner(p, normalize(vec2(0.2, -0.98)), 0.07 * mixW * uAmp, 5.2, 1.9, 0.28, nAcc);
+        p = gerstner(p, normalize(vec2(0.95, 0.31)), 0.045 * mixW * uAmp, 3.1, 2.4, 0.2, nAcc);
         vCrest = p.y;
         vMix = mixW;
         vN = normalize(nAcc);

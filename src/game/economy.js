@@ -44,6 +44,7 @@ export const CATCHES = [
   { id: "cinder_bass", name: "Cinder Bass", rarity: "Uncommon", kind: "credits", value: 28, zones: ["EMBER_SHORE"], minRod: "basic", blurb: "Warm-water bass off Great Saint Alon.", trade: "Redeems for 28 credits." },
   { id: "ash_trout", name: "Ash Trout", rarity: "Rare", kind: "token", value: 22, zones: ["EMBER_SHORE", "EMBER_POOL"], minRod: "advanced", blurb: "Grey-speckled trout from the lava shelf.", trade: "Redeems for 22 native TOKEN." },
   { id: "ember_eel", name: "Ember Eel", rarity: "Epic", kind: "credits", value: 160, zones: ["EMBER_POOL"], minRod: "elite", blurb: "Glows in the black pool. Don’t drop it.", trade: "Redeems for 160 credits." },
+  { id: "jeff", name: "Jeff", rarity: "Mythic", kind: "collectible", value: 0, zones: ["OFFSHORE", "MAIN_DOCK", "EAST_BEACH"], minRod: "basic", blurb: "It’s Jeff. He has a name tag. Nobody issued it.", trade: "Collectible. Jeff stays in the book." },
 ];
 
 export const SHOP_SWAPS = [
@@ -95,6 +96,9 @@ function emptyState() {
     visitedEmber: false,
     caught: 0,
     previewSol: 0,
+    book: {},
+    biggest: 0,
+    sawDrop: false,
   };
 }
 
@@ -104,6 +108,9 @@ export function createEconomy() {
   if (!Array.isArray(state.merch)) state.merch = [];
   if (typeof state.boat !== "boolean") state.boat = false;
   if (typeof state.visitedEmber !== "boolean") state.visitedEmber = false;
+  if (!state.book || typeof state.book !== "object") state.book = {};
+  if (typeof state.biggest !== "number") state.biggest = 0;
+  if (typeof state.sawDrop !== "boolean") state.sawDrop = false;
   if (!state.rods?.length) {
     state.rods = ["basic"];
     state.equipped = "basic";
@@ -180,6 +187,11 @@ export function createEconomy() {
     };
     state.inventory.unshift(item);
     state.caught += 1;
+    if (!state.book) state.book = {};
+    state.book[pick.id] = (state.book[pick.id] || 0) + 1;
+    const size = 20 + Math.round(Math.random() * 80 + (ROD_RANK[rod.id] || 1) * 8);
+    item.size = size;
+    if (size > (state.biggest || 0)) state.biggest = size;
     save();
     return { ok: true, item };
   }
@@ -265,6 +277,12 @@ export function createEconomy() {
     markEmber() {
       if (!state.visitedEmber) {
         state.visitedEmber = true;
+        save();
+      }
+    },
+    markDrop() {
+      if (!state.sawDrop) {
+        state.sawDrop = true;
         save();
       }
     },

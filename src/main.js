@@ -2,12 +2,13 @@ import * as THREE from "three";
 import { C, SPAWN, ISLAND_R, ISLAND2 } from "./game/palette.js";
 import { createWorld, heightAt, zoneAt, INTERACTS, resolveCollision } from "./game/world.js";
 import { animateCharacter, createFirstPersonArms, poseFishingArms } from "./game/characters.js";
-import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, SHOP_GEAR, tradeLine } from "./game/economy.js";
+import { createEconomy, RODS, kindLabel, SHOP_SWAPS, SHOP_MERCH, SHOP_GEAR, tradeLine, CATCHES } from "./game/economy.js";
 import { iconRod, iconSwap, iconMerch, iconFish, iconStat, iconBoat } from "./game/icons.js";
 import { unlockAudio, startAmbience, sfx } from "./game/audio.js";
 import { createSky, createBobber, createSplash, burstSplash, tickSplash, createCatchProp, waterHeight } from "./game/atmosphere.js";
 import { createMinimap } from "./game/minimap.js";
 import { questStatus } from "./game/quests.js";
+import { createLife, tickLife, dayPhase } from "./game/life.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -95,6 +96,9 @@ scene.add(sun);
 const world = createWorld(scene);
 const sky = createSky();
 scene.add(sky);
+const life = createLife(world.root);
+life.patrol = world.people.filter((p) => p.userData.path);
+life.watcher = world.watcher;
 const bobber = createBobber();
 scene.add(bobber);
 const splash = createSplash();
@@ -167,6 +171,7 @@ function openPanel(kind) {
   if (kind === "shop") renderShop();
   else if (kind === "inv") renderInv();
   else if (kind === "board") renderBoard();
+  else if (kind === "book") renderBook();
   else if (kind === "redeem") renderInv(true);
 }
 
@@ -310,6 +315,29 @@ function renderBoard() {
       <div class="stat-card">${iconStat("credits")}<b>${econ.state.credits}</b><span>Credits</span></div>
     </div>
     <div class="rarity-row">${rares}</div>
+    <p class="sub">Local record · biggest fish ${econ.state.biggest || 0} cm. Not a live server board.</p>
+  `;
+}
+
+function renderBook() {
+  const book = econ.state.book || {};
+  const cards = CATCHES.map((c) => {
+    const n = book[c.id] || 0;
+    return `<article class="card">
+      <div class="art">${n ? iconFish(c.id) : iconFish("old_boot")}</div>
+      <div class="copy">
+        <b>${n ? c.name : "???"}</b>
+        <span>${n ? c.blurb : "Not logged yet."}</span>
+        <i class="tag">${n ? `${c.rarity} · x${n}` : "UNKNOWN"}</i>
+      </div>
+    </article>`;
+  }).join("");
+  panel.innerHTML = `
+    <button class="close-x" type="button" data-act="close">✕</button>
+    <p class="mini">FISH BOOK</p>
+    <h2>Catch log</h2>
+    <p class="sub">${Object.keys(book).length}/${CATCHES.length} logged · biggest ${econ.state.biggest || 0} cm · this browser only</p>
+    <div class="cards">${cards}</div>
   `;
 }
 
@@ -421,6 +449,17 @@ function tryInteract() {
   if (lastInteract.id === "duck") toast("Quack. Not a fish. You cannot redeem this.");
   if (lastInteract.id === "chest") toast("Locked. The chef has the key. Obviously.");
   if (lastInteract.id === "crash") toast("Failed airdrop. Contents: sand.");
+  if (lastInteract.id === "vending") toast("Sells warm soda and a key that fits nothing. Out of order since 2009.");
+  if (lastInteract.id === "phone") toast(Math.random() < 0.5 ? "It rings. Nobody speaks. You hang up first." : "Dial tone. Then a splash. Then nothing.");
+  if (lastInteract.id === "bunker") toast("Hatch is locked from below. Something knocks twice, then stops.");
+  if (lastInteract.id === "chairman") toast("Been here 17 years. Says the fish come to him now. He has not moved.");
+  if (lastInteract.id === "advice") toast("Cast when the water looks wet. Reel when it doesn’t. Good luck.");
+  if (lastInteract.id === "drawings") toast("Scratched into the rock: a fish larger than the island. Dated tomorrow.");
+  if (lastInteract.id === "drop") {
+    econ.markDrop();
+    paintHud();
+    toast("The Drop. You can see it from day one. You cannot go there yet.");
+  }
 }
 
 function setCastUI(phase, label, fill) {
@@ -744,6 +783,10 @@ function stepPlayer(dt) {
       vel.x *= 0.2;
       vel.z *= 0.2;
     }
+    if (nz < -88) {
+      nz = -88;
+      vel.z *= 0.1;
+    }
   }
   const hit = resolveCollision(nx, nz);
   if (hit.x !== nx || hit.z !== nz) {
@@ -824,6 +867,7 @@ addEventListener("keydown", (e) => {
   if (e.code === "KeyF") reel();
   if (e.code === "KeyI") (panelOpen === "inv" ? closePanel() : openPanel("inv"));
   if (e.code === "KeyB") (panelOpen === "shop" ? closePanel() : openPanel("shop"));
+  if (e.code === "KeyJ") (panelOpen === "book" ? closePanel() : openPanel("book"));
   if (e.code === "Tab") {
     e.preventDefault();
     panelOpen === "board" ? closePanel() : openPanel("board");
@@ -935,6 +979,7 @@ document.querySelector(".hotbar")?.addEventListener("click", (e) => {
   const hot = b.dataset.hot;
   if (hot === "shop") (panelOpen === "shop" ? closePanel() : openPanel("shop"));
   if (hot === "inv") (panelOpen === "inv" ? closePanel() : openPanel("inv"));
+  if (hot === "book") (panelOpen === "book" ? closePanel() : openPanel("book"));
   if (hot === "board") (panelOpen === "board" ? closePanel() : openPanel("board"));
 });
 
@@ -997,26 +1042,30 @@ function frame(now) {
     for (const p of world.people) {
       const dx = p.position.x - camera.position.x;
       const dz = p.position.z - camera.position.z;
-      if (dx * dx + dz * dz < 900) animateCharacter(p, t, false, p.userData.archetype === "FISHERMAN");
+      if (dx * dx + dz * dz < 900) animateCharacter(p, t, !!p.userData.moving, p.userData.archetype === "FISHERMAN");
     }
   }
-  if (world.birds) {
-    for (const b of world.birds) {
-      b.userData.orbit += dt * 0.22;
-      b.position.set(
-        Math.cos(b.userData.orbit) * b.userData.rad,
-        b.userData.h + Math.sin(now / 700 + b.userData.orbit) * 0.4,
-        Math.sin(b.userData.orbit) * b.userData.rad
-      );
-      if (b.userData.wings) {
-        const flap = Math.sin(now / 140 + b.userData.orbit) * 0.45;
-        b.userData.wings[0].rotation.z = flap;
-        b.userData.wings[1].rotation.z = -flap;
-      }
-    }
+  const tSec = now / 1000;
+  const day = dayPhase(tSec);
+  const raining = life.weather === "rain" || life.weather === "storm";
+  const foggy = life.weather === "fog" || life.weather === "storm";
+  const rough = life.weather === "storm";
+  tickLife(life, { dt, t: tSec, camera, toast, night: day.night, rough, raining, foggy });
+  const elev = day.elev;
+  const dusk = day.dusk;
+  const skyCol = dusk ? 0xc47a4a : day.night ? 0x152033 : 0x6aa3cc;
+  scene.background.setHex(skyCol);
+  scene.fog.color.setHex(skyCol);
+  scene.fog.density = foggy ? 0.028 : day.night ? 0.016 : 0.011;
+  hemi.intensity = day.night ? 0.28 : dusk ? 0.7 : 1.2;
+  sun.intensity = day.night ? 0.08 : dusk ? 0.7 : 0.85;
+  sun.position.set(Math.cos(day.ang) * 70, Math.max(-12, elev * 62), Math.sin(day.ang) * 40);
+  if (world.ocean?.material?.uniforms?.uAmp) world.ocean.material.uniforms.uAmp.value = rough ? 2.15 : 1;
+  if (world.lighthouse) {
+    const lantern = world.lighthouse.children.find((c) => c.material?.emissive);
+    if (lantern?.material) lantern.material.emissiveIntensity = day.night ? 1.4 : 0.22;
   }
   tickSplash(splash, dt);
-  const tSec = now / 1000;
   if (world.ocean?.material?.uniforms?.uTime) world.ocean.material.uniforms.uTime.value = tSec;
   if (world.duck) {
     world.duck.position.y = waterHeight(world.duck.position.x, world.duck.position.z, tSec) + 0.1;

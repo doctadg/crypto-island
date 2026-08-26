@@ -644,6 +644,84 @@ function lighthouse() {
   return g;
 }
 
+function caveDrawings() {
+  const g = new THREE.Group();
+  const wall = mesh(new THREE.BoxGeometry(2.4, 1.4, 0.08), 0x2a2c2a);
+  wall.position.y = 1.1;
+  g.add(wall);
+  for (let i = 0; i < 6; i++) {
+    const scratch = mesh(new THREE.BoxGeometry(0.18 + i * 0.08, 0.04, 0.04), 0xe8c15a);
+    scratch.position.set(-0.7 + i * 0.28, 0.7 + (i % 3) * 0.22, 0.06);
+    scratch.rotation.z = (i % 2 ? -0.4 : 0.3);
+    g.add(scratch);
+  }
+  const big = mesh(new THREE.CapsuleGeometry(0.18, 0.7, 2, 5), 0xc44a3a);
+  big.rotation.z = Math.PI / 2;
+  big.position.set(0.2, 1.15, 0.08);
+  g.add(big);
+  return g;
+}
+
+function vending() {
+  const g = new THREE.Group();
+  const body = mesh(new THREE.BoxGeometry(0.7, 1.5, 0.5), 0xc44a3a);
+  body.position.y = 0.75;
+  const glass = mesh(new THREE.BoxGeometry(0.5, 0.9, 0.06), 0x7ec6d4);
+  glass.position.set(0, 0.9, 0.26);
+  const slot = mesh(new THREE.BoxGeometry(0.22, 0.08, 0.08), C.black);
+  slot.position.set(0, 0.28, 0.28);
+  g.add(body, glass, slot);
+  return g;
+}
+
+function phoneBooth() {
+  const g = new THREE.Group();
+  const box = mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9), 0xc44a3a);
+  box.position.y = 1.1;
+  const pane = mesh(new THREE.BoxGeometry(0.55, 1.1, 0.06), 0x8eb8d4);
+  pane.position.set(0, 1.2, 0.46);
+  const handset = mesh(new THREE.BoxGeometry(0.18, 0.08, 0.06), C.black);
+  handset.position.set(0.18, 1.35, 0.4);
+  g.add(box, pane, handset);
+  return g;
+}
+
+function bunkerDoor() {
+  const g = new THREE.Group();
+  const hatch = mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.12, 8), C.rockDark);
+  hatch.position.y = 0.06;
+  const wheel = mesh(new THREE.TorusGeometry(0.22, 0.04, 5, 8), 0xe8c15a);
+  wheel.rotation.x = Math.PI / 2;
+  wheel.position.y = 0.14;
+  g.add(hatch, wheel);
+  return g;
+}
+
+function chair() {
+  const g = new THREE.Group();
+  const seat = mesh(new THREE.BoxGeometry(0.42, 0.06, 0.42), C.wood);
+  seat.position.y = 0.42;
+  const back = mesh(new THREE.BoxGeometry(0.42, 0.55, 0.06), C.woodDark);
+  back.position.set(0, 0.7, -0.18);
+  for (const [x, z] of [[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]]) {
+    const leg = mesh(new THREE.BoxGeometry(0.05, 0.42, 0.05), C.woodDark);
+    leg.position.set(x, 0.21, z);
+    g.add(leg);
+  }
+  g.add(seat, back);
+  return g;
+}
+
+function bottle() {
+  const g = new THREE.Group();
+  const body = mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.28, 5), 0x6ed18a);
+  body.position.y = 0.14;
+  const neck = mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.1, 5), 0x6ed18a);
+  neck.position.y = 0.32;
+  g.add(body, neck);
+  return g;
+}
+
 function caveMouth() {
   const g = new THREE.Group();
   const lipL = mesh(new THREE.BoxGeometry(1.4, 2.8, 2.4), C.rockDark);
@@ -693,6 +771,7 @@ export const ZONES = [
   { id: "EMBER_SHORE", label: "ST ALON SHORE", hint: "Great Saint Alon shallows", x: 118, z: 16, r: 12, fish: true },
   { id: "EMBER_POOL", label: "ST ALON POOL", hint: "Need Offshore Rod", x: 116, z: -8, r: 9, fish: true },
   { id: "EMBER_HILL", label: "ST ALON HILL", hint: "Ash ridge", x: 118, z: -8, r: 10, fish: false },
+  { id: "THE_DROP", label: "THE DROP", hint: "You can see it. You cannot go there yet.", x: 0, z: -96, r: 18, fish: false },
 ];
 
 export function zoneAt(x, z) {
@@ -855,6 +934,13 @@ export function createWorld(scene) {
   place(root, washedUpPc(), 26.8, 17.4, 0.5, 0, 0.4);
   place(root, treasureChest(), 21.2, 22.6, 0.3, 0, 0.45);
   place(root, crashedCrate(), -26.4, 12.2, 0.4, 0, 0.7);
+  place(root, caveDrawings(), 16.4, 19.4, 0.5, 0.1, 0);
+  place(root, vending(), 18.2, 18.2, -0.4, 0, 0.6);
+  place(root, phoneBooth(), 11.4, -16.6, 0.3, 0, 0.7);
+  place(root, bunkerDoor(), 2.4, -3.2, 0, 0, 0.8);
+  place(root, chair(), -3.6, 31.2, 0.2, 0, 0.4);
+  place(root, bottle(), 27.4, 8.6, 0.4, 0, 0);
+  place(root, bottle(), 24.8, 13.2, -0.3, 0, 0);
   const duck = rubberDuck();
   duck.position.set(8.4, 0.18, 34.6);
   duck.userData.float = true;
@@ -876,6 +962,25 @@ export function createWorld(scene) {
   paperSign.position.set(-80, 1.2, 48);
   paperSign.lookAt(0, 2, 0);
   root.add(paperSign);
+
+  const chairIsle = mesh(new THREE.CylinderGeometry(2.4, 3.1, 1.1, 7), C.sand);
+  chairIsle.position.set(-62, -0.1, -38);
+  root.add(chairIsle);
+  const loneChair = chair();
+  loneChair.position.set(-62, 0.55, -38);
+  root.add(loneChair);
+  const chairSign = billboard("SIT HERE", 2.2);
+  chairSign.position.set(-62, 1.1, -36);
+  chairSign.lookAt(0, 2, 0);
+  root.add(chairSign);
+
+  const dropWall = mesh(new THREE.CylinderGeometry(9, 11, 4.2, 8), 0x1a2430);
+  dropWall.position.set(0, 1.4, -118);
+  root.add(dropWall);
+  const dropSign = billboard("THE DROP  ·  NOT YET", 4.4);
+  dropSign.position.set(0, 4.2, -108);
+  dropSign.lookAt(0, 2, 0);
+  root.add(dropSign);
 
   const emberDock = dock(7.2, 1.7);
   emberDock.position.set(ISLAND2.x - 6, 0.14, ISLAND2.z + 22);
@@ -911,7 +1016,11 @@ export function createWorld(scene) {
     { type: "BUILDER", x: 6.6, z: -4.8, rot: -0.4 },
     { type: "HARVESTER", x: 12.6, z: -15.2, rot: 1.05 },
     { type: "DEFAULT", x: -6.2, z: 6.4, rot: 0.75 },
-    { type: "FISHERMAN", x: 4.2, z: 34.2, rot: -0.2 },
+    { type: "FISHERMAN", x: -3.6, z: 31.2, rot: 0.15, sit: true, talk: "chair17" },
+    { type: "FISHERMAN", x: 1.2, z: 29.6, rot: 0.1, path: [[1.2, 29.6], [-2.4, 28.2], [3.4, 26.8], [1.2, 29.6]] },
+    { type: "DEFAULT", x: -14.2, z: 16.4, rot: 0.4 },
+    { type: "SCOUT", x: -18.6, z: 22.4, rot: 0.2, watcher: true },
+    { type: "TRADER", x: 5.6, z: 8.2, rot: 2.2, talk: "advice" },
     { type: "BEACHGOER", x: 22.4, z: 14.2, rot: 0.3 },
     { type: "SCOUT", x: -8.4, z: 18.6, rot: 1.1 },
     { type: "DEFAULT", x: 2.8, z: 20.4, rot: -0.6 },
@@ -926,13 +1035,20 @@ export function createWorld(scene) {
     c.position.set(n.x, heightAt(n.x, n.z), n.z);
     c.rotation.y = n.rot;
     c.userData.npc = true;
+    c.userData.path = n.path || null;
+    c.userData.u = Math.random();
+    c.userData.talk = n.talk || null;
+    c.userData.watcher = !!n.watcher;
+    if (n.sit) c.position.y += 0.42;
+    if (n.watcher) c.userData.hide = 0;
     root.add(c);
     block(n.x, n.z, 0.45);
     people.push(c);
   }
+  const watcher = people.find((p) => p.userData.watcher) || null;
 
   scene.add(root);
-  return { root, ocean, people, lighthouse: light, birds, duck };
+  return { root, ocean, people, lighthouse: light, birds, duck, watcher };
 }
 
 export const INTERACTS = [
@@ -948,4 +1064,11 @@ export const INTERACTS = [
   { id: "chest", label: "E  Chest", x: 21.2, z: 22.6, r: 2 },
   { id: "crash", label: "E  Airdrop", x: -26.4, z: 12.2, r: 2.2 },
   { id: "emberdock", label: "E  Saint Alon dock", x: 112, z: 14, r: 3.2 },
+  { id: "vending", label: "E  Cave vending", x: 18.2, z: 18.2, r: 2 },
+  { id: "phone", label: "E  Forest phone", x: 11.4, z: -16.6, r: 2 },
+  { id: "bunker", label: "E  Lighthouse hatch", x: 2.4, z: -3.2, r: 2 },
+  { id: "chairman", label: "E  The chair", x: -3.6, z: 31.2, r: 2.2 },
+  { id: "advice", label: "E  Useless advice", x: 5.6, z: 8.2, r: 2.2 },
+  { id: "drawings", label: "E  Cave wall", x: 16.4, z: 19.4, r: 2 },
+  { id: "drop", label: "E  The Drop", x: 0, z: -96, r: 14 },
 ];

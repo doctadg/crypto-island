@@ -8,5 +8,7 @@ export function questStatus(state) {
     { id: "skiff", label: "Buy the Island Skiff in Shop · GEAR", done: !!state.boat },
     { id: "sail", label: "Sail the skiff to Great Saint Alon", done: !!state.visitedEmber },
     { id: "ember", label: "Catch a fish on Great Saint Alon", done: emberCatch },
+    { id: "book", label: "Open the Fish Book (J)", done: Object.keys(state.book || {}).length >= 3 },
+    { id: "drop", label: "Look at The Drop from the south cliffs", done: !!state.sawDrop },
   ];
 }
