@@ -10,6 +10,7 @@ import { createMinimap } from "./game/minimap.js";
 import { questStatus } from "./game/quests.js";
 import { createLife, tickLife, dayPhase } from "./game/life.js";
 import { createEvents, tickEvents, currentEvent, EVENT_CATCHES } from "./game/events.js";
+import { SECRETS, secretAt, gateSecret } from "./game/secrets.js";
 
 const canvas = document.getElementById("game");
 const hud = document.getElementById("hud");
@@ -326,6 +327,9 @@ function renderBoard() {
     </div>
     <div class="rarity-row">${rares}</div>
     <p class="sub">Local record · biggest fish ${econ.state.biggest || 0} cm. Not a live server board.</p>
+    <p class="mini">FOUND</p>
+    <p class="sub">${Object.keys(econ.state.found || {}).length}/${SECRETS.length} secrets. No map pins. On purpose.</p>
+    <div class="locker">${SECRETS.filter((s) => econ.state.found?.[s.id]).map((s) => `<span>${s.name}</span>`).join("") || "Nothing logged yet. Walk."}</div>
   `;
 }
 
@@ -470,6 +474,26 @@ function tryInteract() {
     paintHud();
     toast("The Drop. You can see it from day one. You cannot go there yet.");
   }
+  const secretIds = new Set(SECRETS.map((s) => s.id));
+  if (secretIds.has(lastInteract.id)) {
+    const s = SECRETS.find((x) => x.id === lastInteract.id);
+    const g = gateSecret(s, {
+      boat: econ.state.boat,
+      night: dayPhase(performance.now() / 1000).night,
+      rodRank: { none: 0, basic: 1, advanced: 2, elite: 3 }[econ.state.equipped] || 0,
+      storm: life.weather === "storm",
+    });
+    if (!g.ok) {
+      toast(g.reason);
+      return;
+    }
+    const first = econ.discover(s.id);
+    toast(s.hint);
+    if (first) {
+      paintHud();
+      toast(`LOGGED · ${s.name}`);
+    }
+  }
 }
 
 function setCastUI(phase, label, fill) {
@@ -543,6 +567,8 @@ function lookingAtWater() {
     const x = camera.position.x + dir.x * dist;
     const z = camera.position.z + dir.z * dist;
     const y = camera.position.y + dir.y * dist;
+    const sec = secretAt(x, z) || secretAt(camera.position.x, camera.position.z);
+    if (sec?.fish && econ.state.found?.[sec.id]) return { ok: true, x, z, secret: sec };
     if (y < 1.4 && heightAt(x, z) < 0.35) return { ok: true, x, z };
   }
   return { ok: false };
@@ -558,8 +584,11 @@ function beginCast() {
   }
   const zone = zoneAt(aim.x, aim.z);
   const here = zoneAt(camera.position.x, camera.position.z);
-  const useZone = zone.fish ? zone : here;
-  if (heightAt(aim.x, aim.z) >= 0.35) {
+  const sec = aim.secret || secretAt(camera.position.x, camera.position.z);
+  const useZone = sec?.fish && econ.state.found?.[sec.id]
+    ? { id: sec.fish, fish: true }
+    : zone.fish ? zone : here;
+  if (!sec?.fish && heightAt(aim.x, aim.z) >= 0.35) {
     toast("Look at the water to cast.");
     return;
   }

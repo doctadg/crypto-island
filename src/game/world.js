@@ -722,6 +722,47 @@ function bottle() {
   return g;
 }
 
+function grate() {
+  const g = new THREE.Group();
+  const rim = mesh(new THREE.BoxGeometry(1.1, 0.12, 1.1), C.rockDark);
+  rim.position.y = 0.06;
+  const hole = mesh(new THREE.BoxGeometry(0.7, 0.08, 0.7), 0x121210);
+  hole.position.y = 0.08;
+  g.add(rim, hole);
+  return g;
+}
+
+function wreckHull() {
+  const g = new THREE.Group();
+  const hull = mesh(new THREE.BoxGeometry(3.4, 1.1, 8.2), C.woodDark);
+  hull.rotation.z = 0.35;
+  hull.position.y = 0.2;
+  const mast = mesh(new THREE.CylinderGeometry(0.08, 0.1, 4.4, 5), C.wood);
+  mast.position.set(0.4, 1.8, 1.2);
+  mast.rotation.z = 0.5;
+  g.add(hull, mast);
+  return g;
+}
+
+function shack() {
+  const g = hut(C.woodDark);
+  g.scale.setScalar(1.15);
+  return g;
+}
+
+function carvingRock() {
+  const g = boulder();
+  const scratch = mesh(new THREE.BoxGeometry(0.5, 0.08, 0.04), 0xe8c15a);
+  scratch.position.set(0.1, 0.55, 0.45);
+  g.add(scratch);
+  return g;
+}
+
+function labShack() {
+  const g = hut(0xc9d4c6);
+  return g;
+}
+
 function caveMouth() {
   const g = new THREE.Group();
   const lipL = mesh(new THREE.BoxGeometry(1.4, 2.8, 2.4), C.rockDark);
@@ -941,6 +982,16 @@ export function createWorld(scene) {
   place(root, chair(), -3.6, 31.2, 0.2, 0, 0.4);
   place(root, bottle(), 27.4, 8.6, 0.4, 0, 0);
   place(root, bottle(), 24.8, 13.2, -0.3, 0, 0);
+  place(root, shack(), 14.6, -18.4, 0.4, 0, 1.4);
+  place(root, grate(), 8.2, 16.4, 0, 0, 0.6);
+  const wreck = wreckHull();
+  wreck.position.set(36.4, 0.05, 4.2);
+  wreck.rotation.y = 0.7;
+  root.add(wreck);
+  place(root, carvingRock(), -12.6, -6.4, 0.3, 0, 0.6);
+  place(root, labShack(), -6.8, -18.2, -0.5, 0, 1.3);
+  place(root, caveMouth(), -16.4, 4.2, 1.2, -0.2, 1.8);
+  place(root, bottle(), 32.2, 16.8, 0.2, 0, 0);
   const duck = rubberDuck();
   duck.position.set(8.4, 0.18, 34.6);
   duck.userData.float = true;
@@ -1071,4 +1122,17 @@ export const INTERACTS = [
   { id: "advice", label: "E  Useless advice", x: 5.6, z: 8.2, r: 2.2 },
   { id: "drawings", label: "E  Cave wall", x: 16.4, z: 19.4, r: 2 },
   { id: "drop", label: "E  The Drop", x: 0, z: -96, r: 14 },
+  { id: "hut", label: "E  Abandoned hut", x: 14.6, z: -18.4, r: 2.4 },
+  { id: "sewer", label: "E  Drain", x: 8.2, z: 16.4, r: 2.2 },
+  { id: "wreck", label: "E  Wreck", x: 36.4, z: 4.2, r: 3.2 },
+  { id: "secret_beach", label: "E  Quiet cove", x: 22.4, z: -6.8, r: 2.6 },
+  { id: "cliff_path", label: "E  Goat path", x: -22.4, z: 22.6, r: 2.2 },
+  { id: "carving", label: "E  Carved rock", x: -12.6, z: -6.4, r: 2 },
+  { id: "station", label: "E  Research shack", x: -6.8, z: -18.2, r: 2.4 },
+  { id: "map", label: "E  Soggy chart", x: 32.2, z: 16.8, r: 2 },
+  { id: "buried", label: "E  Disturbed sand", x: 27.2, z: 4.8, r: 2 },
+  { id: "tunnel", label: "E  Pipe", x: -34.2, z: 14.6, r: 3 },
+  { id: "west_cave", label: "E  Second mouth", x: -16.4, z: 4.2, r: 2.4 },
+  { id: "isle_chair", label: "E  Empty chair", x: -62, z: -38, r: 4 },
+  { id: "hole", label: "E  Black hole", x: -20.8, z: 12.4, r: 2.4 },
 ];

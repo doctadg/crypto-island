@@ -7,7 +7,7 @@ export const RODS = {
     name: "Dock Rod",
     burn: 80,
     luck: 0,
-    zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK"],
+    zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "DRAIN", "COVE"],
     note: "Docks and beach water.",
   },
   advanced: {
@@ -15,7 +15,7 @@ export const RODS = {
     name: "Cliff Rod",
     burn: 180,
     luck: 8,
-    zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES"],
+    zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES", "DRAIN", "COVE", "HOLE", "WRECK"],
     note: "Opens cliffs and the cave pool.",
   },
   elite: {
@@ -23,7 +23,7 @@ export const RODS = {
     name: "Offshore Rod",
     burn: 360,
     luck: 18,
-    zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES", "OFFSHORE", "EMBER_SHORE", "EMBER_POOL"],
+    zones: ["MAIN_DOCK", "EAST_BEACH", "NORTH_DOCK", "SOUTH_CLIFFS", "CAVES", "OFFSHORE", "EMBER_SHORE", "EMBER_POOL", "DRAIN", "COVE", "HOLE", "WRECK"],
     note: "Opens the deep offshore pool and Great Saint Alon.",
   },
 };
@@ -47,6 +47,10 @@ export const CATCHES = [
   { id: "ash_trout", name: "Ash Trout", rarity: "Rare", kind: "token", value: 22, zones: ["EMBER_SHORE", "EMBER_POOL"], minRod: "advanced", blurb: "Grey-speckled trout from the lava shelf.", trade: "Redeems for 22 native TOKEN." },
   { id: "ember_eel", name: "Ember Eel", rarity: "Epic", kind: "credits", value: 160, zones: ["EMBER_POOL"], minRod: "elite", blurb: "Glows in the black pool. Don’t drop it.", trade: "Redeems for 160 credits." },
   { id: "jeff", name: "Jeff", rarity: "Mythic", kind: "collectible", value: 0, zones: ["OFFSHORE", "MAIN_DOCK", "EAST_BEACH"], minRod: "basic", blurb: "It’s Jeff. He has a name tag. Nobody issued it.", trade: "Collectible. Jeff stays in the book." },
+  { id: "drain_goby", name: "Drain Goby", rarity: "Uncommon", kind: "credits", value: 24, zones: ["DRAIN"], minRod: "basic", blurb: "Lives in the pipe. Tastes like coins.", trade: "Redeems for 24 credits." },
+  { id: "wreck_grouper", name: "Wreck Grouper", rarity: "Rare", kind: "token", value: 18, zones: ["WRECK"], minRod: "basic", blurb: "Grew up in the hold. Still wearing rust.", trade: "Redeems for 18 TOKEN." },
+  { id: "cove_perch", name: "Cove Perch", rarity: "Uncommon", kind: "credits", value: 22, zones: ["COVE"], minRod: "basic", blurb: "The quiet beach fish. Nobody logged it.", trade: "Redeems for 22 credits." },
+  { id: "hole_ling", name: "Hole Ling", rarity: "Epic", kind: "credits", value: 110, zones: ["HOLE"], minRod: "advanced", blurb: "Black-water ling. No waypoint. On purpose.", trade: "Redeems for 110 credits." },
 ];
 
 export const SHOP_SWAPS = [
@@ -101,6 +105,7 @@ function emptyState() {
     book: {},
     biggest: 0,
     sawDrop: false,
+    found: {},
   };
 }
 
@@ -113,6 +118,7 @@ export function createEconomy() {
   if (!state.book || typeof state.book !== "object") state.book = {};
   if (typeof state.biggest !== "number") state.biggest = 0;
   if (typeof state.sawDrop !== "boolean") state.sawDrop = false;
+  if (!state.found || typeof state.found !== "object") state.found = {};
   if (!state.rods?.length) {
     state.rods = ["basic"];
     state.equipped = "basic";
@@ -292,6 +298,13 @@ export function createEconomy() {
         state.sawDrop = true;
         save();
       }
+    },
+    discover(id) {
+      if (!state.found) state.found = {};
+      if (state.found[id]) return false;
+      state.found[id] = Date.now();
+      save();
+      return true;
     },
   };
 }

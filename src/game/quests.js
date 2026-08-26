@@ -10,5 +10,6 @@ export function questStatus(state) {
     { id: "ember", label: "Catch a fish on Great Saint Alon", done: emberCatch },
     { id: "book", label: "Open the Fish Book (J)", done: Object.keys(state.book || {}).length >= 3 },
     { id: "drop", label: "Look at The Drop from the south cliffs", done: !!state.sawDrop },
+    { id: "secrets", label: `Log 5 secrets (${Object.keys(state.found || {}).length}/13)`, done: Object.keys(state.found || {}).length >= 5 },
   ];
 }
