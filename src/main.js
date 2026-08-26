@@ -10,6 +10,7 @@ import { createMinimap } from "./game/minimap.js";
 import { questStatus } from "./game/quests.js";
 import { createLife, tickLife, dayPhase } from "./game/life.js";
 import { createEvents, tickEvents, currentEvent, EVENT_CATCHES } from "./game/events.js";
+import { dressCatch } from "./game/catch-models.js";
 import { SECRETS, secretAt, gateSecret } from "./game/secrets.js";
 
 const canvas = document.getElementById("game");
@@ -312,7 +313,7 @@ function renderInv(redeemFocus = false) {
 function renderBoard() {
   const counts = {};
   for (const it of econ.state.inventory) counts[it.rarity] = (counts[it.rarity] || 0) + 1;
-  const rares = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"]
+  const rares = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "???"]
     .map((r) => `<div class="stat-pill"><b>${counts[r] || 0}</b><span>${r}</span></div>`)
     .join("");
   panel.innerHTML = `
@@ -335,7 +336,9 @@ function renderBoard() {
 
 function renderBook() {
   const book = econ.state.book || {};
-  const cards = [...CATCHES, ...EVENT_CATCHES].map((c) => {
+  const known = [...CATCHES, ...EVENT_CATCHES].filter((c) => book[c.id] || !c.hidden);
+  const hiddenLeft = [...CATCHES, ...EVENT_CATCHES].filter((c) => c.hidden && !book[c.id]).length;
+  const cards = known.map((c) => {
     const n = book[c.id] || 0;
     return `<article class="card">
       <div class="art">${n ? iconFish(c.id) : iconFish("old_boot")}</div>
@@ -349,8 +352,8 @@ function renderBook() {
   panel.innerHTML = `
     <button class="close-x" type="button" data-act="close">✕</button>
     <p class="mini">FISH BOOK</p>
-    <h2>Catch log</h2>
-    <p class="sub">${Object.keys(book).length}/${CATCHES.length + EVENT_CATCHES.length} logged · biggest ${econ.state.biggest || 0} cm · this browser only</p>
+    <h2>What you landed</h2>
+    <p class="sub">${Object.keys(book).length} logged · ${hiddenLeft} still unnamed · this browser only</p>
     <div class="cards">${cards}</div>
   `;
 }
@@ -541,15 +544,27 @@ function showCatch(item) {
   document.getElementById("catch-kind").textContent = kindLabel(item.kind);
   const trade = document.getElementById("catch-trade");
   if (trade) trade.textContent = `${tradeLine(item)}${item.size ? ` · ${item.size} cm` : ""}`;
+  catchCard.classList.toggle("jackpot", item.rarity === "???" || item.rarity === "Mythic");
   catchCard.classList.remove("hidden");
-  catchTimer = 8;
+  catchTimer = item.rarity === "???" ? 12 : 8;
+  dressCatch(catchProp, item.id);
   catchProp.visible = true;
-  const s = Math.max(0.7, Math.min(2.4, (item.size || 40) / 40));
+  const s = Math.max(0.7, Math.min(2.6, (item.size || 40) / 40));
   catchProp.scale.setScalar(s);
   freeMouse();
-  const rare = item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "Epic";
+  const rare = item.rarity === "Legendary" || item.rarity === "Mythic" || item.rarity === "???" || item.rarity === "Epic";
   sfx.catch(rare);
-  if (rare) toast(`ISLAND CALL · ${item.name}`);
+  const where = (item.zone || "ISLAND").replaceAll("_", " ");
+  if (rare) toast(`YOU caught ${item.name} at ${where}`);
+  if (item.rarity === "???" || item.rarity === "Mythic") {
+    const b = document.getElementById("event-banner");
+    if (b && !islandEvents.active) {
+      b.classList.remove("hidden");
+      document.getElementById("event-title").textContent = "ISLAND CALL";
+      document.getElementById("event-hint").textContent = `YOU caught ${item.name} at ${where} · local preview`;
+      setTimeout(() => { if (!islandEvents.active) b.classList.add("hidden"); }, 8000);
+    }
+  }
 }
 
 function castPoint() {

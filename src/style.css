@@ -300,6 +300,10 @@ button { font-family: inherit; cursor: pointer; }
 .tension-track { height: 10px; margin-top: 4px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.2); overflow: hidden; }
 .tension-track i { display: block; height: 100%; width: 20%; background: linear-gradient(90deg, #2f8a48, #e8c15a, #e35a4a); }
 
+.catch-card.jackpot {
+  border-color: #e8c15a;
+  box-shadow: 0 0 24px rgba(232, 193, 90, 0.35);
+}
 .catch-card {
   position: absolute; left: 50%; top: 16%;
   transform: translateX(-50%);

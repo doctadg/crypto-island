@@ -51,6 +51,13 @@ export const CATCHES = [
   { id: "wreck_grouper", name: "Wreck Grouper", rarity: "Rare", kind: "token", value: 18, zones: ["WRECK"], minRod: "basic", blurb: "Grew up in the hold. Still wearing rust.", trade: "Redeems for 18 TOKEN." },
   { id: "cove_perch", name: "Cove Perch", rarity: "Uncommon", kind: "credits", value: 22, zones: ["COVE"], minRod: "basic", blurb: "The quiet beach fish. Nobody logged it.", trade: "Redeems for 22 credits." },
   { id: "hole_ling", name: "Hole Ling", rarity: "Epic", kind: "credits", value: 110, zones: ["HOLE"], minRod: "advanced", blurb: "Black-water ling. No waypoint. On purpose.", trade: "Redeems for 110 credits." },
+  { id: "lost_wallet", name: "Lost Wallet", rarity: "Legendary", kind: "sol", value: 0.03, zones: ["EAST_BEACH", "MAIN_DOCK", "WRECK"], minRod: "basic", hidden: true, blurb: "Still has a seed phrase written wrong.", trade: "Redeems for 0.03 SOL (preview)." },
+  { id: "secret_key", name: "Brass Key", rarity: "Legendary", kind: "collectible", value: 0, zones: ["CAVES", "DRAIN", "HOLE"], minRod: "advanced", hidden: true, blurb: "Fits a lock nobody admits exists.", trade: "Collectible. Status piece." },
+  { id: "mystery_ticket", name: "Mystery Ticket", rarity: "Mythic", kind: "collectible", value: 0, zones: ["OFFSHORE", "COVE"], minRod: "elite", hidden: true, blurb: "Admit one. Date blank. Venue blank.", trade: "Collectible." },
+  { id: "boat_part", name: "Skiff Rib", rarity: "Epic", kind: "collectible", value: 0, zones: ["WRECK", "OFFSHORE"], minRod: "advanced", hidden: true, blurb: "Would complete a better boat. Someday.", trade: "Collectible." },
+  { id: "ancient_coil", name: "Ancient Coil", rarity: "Mythic", kind: "collectible", value: 0, zones: ["CAVES", "EMBER_POOL"], minRod: "elite", hidden: true, blurb: "Warm. Older than the lighthouse.", trade: "Collectible." },
+  { id: "mutant_snapper", name: "Mutant Snapper", rarity: "Legendary", kind: "token", value: 48, zones: ["EAST_BEACH", "DRAIN"], minRod: "basic", hidden: true, blurb: "Too many eyes. Still a snapper.", trade: "Redeems for 48 TOKEN." },
+  { id: "jackpot_box", name: "???", rarity: "???", kind: "bundle", value: 1, zones: ["OFFSHORE", "THE_DROP", "HOLE"], minRod: "elite", hidden: true, blurb: "The island paid out. Nobody wrote the rules down.", trade: "Jackpot preview. Mixed claim." },
 ];
 
 export const SHOP_SWAPS = [
@@ -83,6 +90,7 @@ const RARITY_WEIGHT = {
   Epic: 7,
   Legendary: 2.2,
   Mythic: 0.45,
+  "???": 0.08,
 };
 
 const ROD_RANK = { basic: 1, advanced: 2, elite: 3 };
@@ -178,7 +186,7 @@ export function createEconomy() {
     if (!pool.length) return { ok: false, reason: "Nothing bites here." };
     const weighted = pool.map((c) => ({
       c,
-      w: Math.max(0.12, RARITY_WEIGHT[c.rarity] + rod.luck * (c.rarity === "Common" ? -0.4 : 0.38)),
+      w: Math.max(0.04, (RARITY_WEIGHT[c.rarity] || 0.08) + rod.luck * (c.rarity === "Common" ? -0.4 : c.rarity === "???" ? 0.08 : 0.38)),
     }));
     const total = weighted.reduce((s, x) => s + x.w, 0);
     let r = Math.random() * total;
@@ -215,9 +223,9 @@ export function createEconomy() {
     if (item.kind === "sol") state.previewSol += item.value;
     if (item.kind === "merch") state.merch.unshift({ name: item.merch || item.name, at: Date.now() });
     if (item.kind === "bundle") {
-      state.credits += 200;
-      state.tokens += 40;
-      state.previewSol += 0.05;
+      state.credits += item.id === "jackpot_box" ? 400 : 200;
+      state.tokens += item.id === "jackpot_box" ? 80 : 40;
+      state.previewSol += item.id === "jackpot_box" ? 0.12 : 0.05;
     }
   }
 
